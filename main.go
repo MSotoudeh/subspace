@@ -141,6 +141,7 @@ func main() {
 	r.GET("/profiles/delete/:profile", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
 	r.POST("/profiles/delete", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
 	r.GET("/profiles/config/wireguard/:profile", Log(WebHandler(wireguardConfigHandler, "profiles/config/wireguard")))
+	r.GET("/profiles/png/wireguard/:profile", Log(WebHandler(wireguardPNGHandler, "profiles/png/wireguard")))
 	r.GET("/static/*path", staticHandler)
 
 	//

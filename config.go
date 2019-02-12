@@ -20,6 +20,7 @@ var (
 type Profile struct {
 	ID       string    `json:"id"`
 	Name     string    `json:"name"`
+	PNG      string    `json:"png"`
 	Platform string    `json:"platform"`
 	Number   int       `json:"number"`
 	Created  time.Time `json:"created"`
@@ -35,6 +36,14 @@ func (p Profile) WireGuardConfigPath() string {
 
 func (p Profile) WireGuardConfigName() string {
 	return "wg0.conf"
+}
+
+func (p Profile) WireGuardPNGPath() string {
+	return fmt.Sprintf("%s/clients/%s.png", datadir, p.PNG)
+}
+
+func (p Profile) WireGuardPNGName() string {
+	return "wg0.png"
 }
 
 type Info struct {
@@ -139,10 +148,13 @@ func (c *Config) AddProfile(name, platform string) (Profile, error) {
 	defer c.Unlock()
 
 	var id string
+	var png string
 	for {
 		n := RandomString(16)
+		m := RandomString(16)
 		if _, err := c.findProfile(n); err == ErrProfileNotFound {
 			id = n
+			png = m
 			break
 		}
 	}
@@ -155,6 +167,7 @@ func (c *Config) AddProfile(name, platform string) (Profile, error) {
 	profile := Profile{
 		ID:       id,
 		Name:     name,
+		PNG:      png,
 		Platform: platform,
 		Number:   number,
 		Created:  time.Now(),

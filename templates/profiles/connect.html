@@ -41,6 +41,9 @@
                 <li>
                     Connect to your VPN server
                 </li>
+                <li>
+                    Or use the QR Image <img src="/profiles/png/wireguard/{{$.Profile.ID}}">
+                </li>
             </ol>
         {{else if eq $.Profile.Platform "osx"}}
             <div class="ui large blue header"><i class="apple icon"></i> Mac OS &mdash; Instructions</div>
@@ -50,6 +53,9 @@
                 <li>Download your <a href="/profiles/config/wireguard/{{$.Profile.ID}}">WireGuard config</a> into your Downloads folder</li>
                 <li>In your terminal, run <b>wg-quick up ~/Downloads/wg0.conf</b></li>
                 <li>To disconnect, run <b>wg-quick down ~/Downloads/wg0.conf</b></li>
+                <li>
+                    Or use the QR Image <img src="/profiles/png/wireguard/{{$.Profile.ID}}">
+                </li>
             </ol>
         {{else if eq $.Profile.Platform "ios"}}
             <div class="ui large blue header"><i class="apple icon"></i> iOS (iPhone/iPad) &mdash; Instructions</div>
@@ -66,8 +72,10 @@
                 <li>
                     Turn your VPN on
                 </li>
+                <li>
+                    Or use the QR Image <img src="/profiles/png/wireguard/{{$.Profile.ID}}">
+                </li>
             </ol>
-
         {{else if eq $.Profile.Platform "android"}}
             <div class="ui large blue header"><i class="android icon"></i> Android &mdash; Instructions</div>
             <ol class="ui huge list">
@@ -79,6 +87,9 @@
                 </li>
                 <li>
                     Connect to your VPN server
+                </li>
+                <li>
+                    Or use the QR Image <img src="/profiles/png/wireguard/{{$.Profile.ID}}">
                 </li>
             </ol>
         {{else}}
@@ -92,6 +103,9 @@
                 </li>
                 <li>
                     Connect to your VPN server
+                </li>
+                <li>
+                    Or use the QR Image <img src="/profiles/png/wireguard/{{$.Profile.ID}}">
                 </li>
             </ol>
 

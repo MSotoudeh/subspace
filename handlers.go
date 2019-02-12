@@ -49,6 +49,38 @@ func wireguardConfigHandler(w *Web) {
 	}
 }
 
+func wireguardPNGHandler(w *Web) {
+	profile, err := config.FindProfile(w.ps.ByName("profile"))
+	if err != nil {
+		http.NotFound(w.w, w.r)
+		return
+	}
+
+	f, err := os.Open(profile.WireGuardPNGPath())
+	if err != nil {
+		logger.Warn(err)
+		Error(w.w, fmt.Errorf("png file error"))
+		return
+	}
+
+	stat, err := f.Stat()
+	if err != nil {
+		logger.Warn(err)
+		Error(w.w, fmt.Errorf("png file size error"))
+		return
+	}
+
+	w.w.Header().Set("Content-Disposition", "attachment; filename="+profile.WireGuardPNGName())
+	w.w.Header().Set("Content-Type", "application/x-wireguard-profile")
+	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
+	_, err = io.Copy(w.w, f)
+	if err != nil {
+		logger.Error(err)
+		Error(w.w, fmt.Errorf("config output error"))
+		return
+	}
+}
+
 func configureHandler(w *Web) {
 	if config.FindInfo().Configured {
 		w.Redirect("/?error=configured")
@@ -242,6 +274,7 @@ PublicKey = $(cat server.public)
 Endpoint = {{$.Domain}}:51820
 AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
+qrencode -t PNG -o clients/{{$.Profile.PNG}}.png < clients/{{$.Profile.ID}}.conf
 `
 	_, err = bash(script, struct {
 		Profile Profile
@@ -295,6 +328,7 @@ peerid=$(cat peers/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\
 wg set wg0 peer $peerid remove
 rm peers/{{$.Profile.ID}}.conf
 rm clients/{{$.Profile.ID}}.conf
+rm clients/{{$.Profile.PNG}}.png
 `
 	output, err := bash(script, struct {
 		Profile Profile
