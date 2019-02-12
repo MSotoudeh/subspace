@@ -5,13 +5,13 @@ export GOPATH="/opt/subspace";
 export PATH="$GOPATH/bin:/usr/local/go/bin:$PATH";
 go version
 
-#apt-get update
-#apt-get install dirmngr
+apt-get update
+apt-get install dirmngr
 
 echo "deb http://deb.debian.org/debian/ unstable main" > /etc/apt/sources.list.d/unstable-wireguard.list
 printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/preferences.d/limit-unstable
-#apt update
-#apt install -y wireguard
+apt update
+apt install -y wireguard
 
 # Load modules.
 modprobe wireguard
@@ -23,10 +23,10 @@ sysctl -w net.ipv4.ip_forward=1
 sysctl -w net.ipv6.conf.all.forwarding=1
 
 # gcc for cgo
-#apt-get install -y --no-install-recommends g++ gcc libc6-dev make pkg-config
+apt-get install -y --no-install-recommends g++ gcc libc6-dev make pkg-config
 
 #update system and remove apt lists
-#apt-get install -y git
+apt-get install -y git
 
 # clone git
 if [ ! -d "$GIT_DIR" ]; then
