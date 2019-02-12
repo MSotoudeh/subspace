@@ -218,7 +218,7 @@ func addProfileHandler(w *Web) {
 	}
 
 	script := `
-cd /data/wireguard
+cd /etc/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
@@ -290,7 +290,7 @@ func deleteProfileHandler(w *Web) {
 
 	script := `
 # WireGuard
-cd /data/wireguard
+cd /etc/wireguard
 peerid=$(cat peers/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
 wg set wg0 peer $peerid remove
 rm peers/{{$.Profile.ID}}.conf

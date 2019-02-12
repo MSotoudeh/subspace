@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/tls"
+	// "crypto/rand"
+	// "crypto/tls"
 	"flag"
 	"fmt"
 	"net"
@@ -66,7 +66,7 @@ var (
 )
 
 func init() {
-	cli.StringVar(&datadir, "datadir", "/data", "data dir")
+	cli.StringVar(&datadir, "datadir", "/etc/wireguard", "data dir")
 	cli.StringVar(&backlink, "backlink", "", "backlink (optional)")
 	cli.StringVar(&httpHost, "http-host", "", "HTTP host")
 	cli.BoolVar(&showVersion, "version", false, "display version and exit")
@@ -172,14 +172,14 @@ func main() {
 	go func() {
 		redir := httprouter.New()
 		redir.GET("/*path", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-			r.URL.Scheme = "https"
+			r.URL.Scheme = "http"
 			r.URL.Host = httpHost
 			http.Redirect(w, r, r.URL.String(), http.StatusFound)
 		})
 
 		httpd := &http.Server{
 			Handler:        certmanager.HTTPHandler(redir),
-			Addr:           ":80",
+			Addr:           ":88",
 			WriteTimeout:   httpTimeout,
 			ReadTimeout:    httpTimeout,
 			MaxHeaderBytes: maxHeaderBytes,
@@ -190,45 +190,45 @@ func main() {
 	}()
 
 	// TLS
-	tlsConfig := tls.Config{
-		GetCertificate: certmanager.GetCertificate,
-		NextProtos:     []string{"http/1.1"},
-		Rand:           rand.Reader,
-		PreferServerCipherSuites: true,
-		MinVersion:               tls.VersionTLS12,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-		},
-	}
+	// tlsConfig := tls.Config{
+	// 	GetCertificate:           certmanager.GetCertificate,
+	// 	NextProtos:               []string{"http/1.1"},
+	// 	Rand:                     rand.Reader,
+	// 	PreferServerCipherSuites: true,
+	// 	MinVersion:               tls.VersionTLS12,
+	// 	CipherSuites: []uint16{
+	// 		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+	// 		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+	// 		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	//
+	// 		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+	// 		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+	// 		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	// 	},
+	// }
 
 	httpsd := &http.Server{
 		Handler:        r,
-		Addr:           ":443",
+		Addr:           ":80",
 		WriteTimeout:   httpTimeout,
 		ReadTimeout:    httpTimeout,
 		MaxHeaderBytes: maxHeaderBytes,
 	}
 
 	// Enable TCP keep alives on the TLS connection.
-	tcpListener, err := net.Listen("tcp", ":443")
+	tcpListener, err := net.Listen("tcp", ":80")
 	if err != nil {
 		logger.Fatalf("listen failed: %s", err)
 		return
 	}
-	tlsListener := tls.NewListener(tcpKeepAliveListener{tcpListener.(*net.TCPListener)}, &tlsConfig)
+	//tlsListener := tls.NewListener(tcpKeepAliveListener{tcpListener.(*net.TCPListener)}, &tlsConfig)
 
 	logger.Infof("Subspace version: %s %s", version, &url.URL{
-		Scheme: "https",
+		Scheme: "http",
 		Host:   httpHost,
 		Path:   "/",
 	})
-	logger.Fatal(httpsd.Serve(tlsListener))
+	logger.Fatal(httpsd.Serve(tcpListener))
 }
 
 type tcpKeepAliveListener struct {

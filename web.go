@@ -225,7 +225,7 @@ func NewSessionCookie(r *http.Request) (*http.Cookie, error) {
 		Value:    encoded,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 		Expires:  expires,
 	}
 	return cookie, nil

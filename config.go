@@ -30,7 +30,7 @@ func (p Profile) NameClean() string {
 }
 
 func (p Profile) WireGuardConfigPath() string {
-	return fmt.Sprintf("%s/wireguard/clients/%s.conf", datadir, p.ID)
+	return fmt.Sprintf("%s/clients/%s.conf", datadir, p.ID)
 }
 
 func (p Profile) WireGuardConfigName() string {
