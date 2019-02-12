@@ -57,6 +57,7 @@ cd $GOPATH
 
 go get -v \
     github.com/jteeuwen/go-bindata/... \
+    github.com/jteeuwen/go-bindata \
     github.com/dustin/go-humanize \
     github.com/julienschmidt/httprouter \
     github.com/Sirupsen/logrus \
