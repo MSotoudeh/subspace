@@ -1,24 +1,18 @@
 package main
 
 import (
-	"context"
-	// "crypto/rand"
-	// "crypto/tls"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/securecookie"
-	"golang.org/x/crypto/acme/autocert"
 )
 
 var (
@@ -154,62 +148,7 @@ func main() {
 	httpTimeout := 10 * time.Minute
 	maxHeaderBytes := 10 * (1024 * 1024)
 
-	// autocert
-	certmanager := autocert.Manager{
-		Prompt: autocert.AcceptTOS,
-		Cache:  autocert.DirCache(filepath.Join(datadir, "letsencrypt")),
-		HostPolicy: func(_ context.Context, host string) error {
-			host = strings.TrimPrefix(host, "www.")
-			if host == httpHost {
-				return nil
-			}
-			if host == config.FindInfo().Domain {
-				return nil
-			}
-			return fmt.Errorf("autocert: host %q not permitted by HostPolicy", host)
-		},
-	}
-
-	// http redirect to https and Let's Encrypt auth
-	go func() {
-		redir := httprouter.New()
-		redir.GET("/*path", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-			r.URL.Scheme = "http"
-			r.URL.Host = httpHost
-			http.Redirect(w, r, r.URL.String(), http.StatusFound)
-		})
-
-		httpd := &http.Server{
-			Handler:        certmanager.HTTPHandler(redir),
-			Addr:           ":88",
-			WriteTimeout:   httpTimeout,
-			ReadTimeout:    httpTimeout,
-			MaxHeaderBytes: maxHeaderBytes,
-		}
-		if err := httpd.ListenAndServe(); err != nil {
-			logger.Fatalf("http server on port 80 failed: %s", err)
-		}
-	}()
-
-	// TLS
-	// tlsConfig := tls.Config{
-	// 	GetCertificate:           certmanager.GetCertificate,
-	// 	NextProtos:               []string{"http/1.1"},
-	// 	Rand:                     rand.Reader,
-	// 	PreferServerCipherSuites: true,
-	// 	MinVersion:               tls.VersionTLS12,
-	// 	CipherSuites: []uint16{
-	// 		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-	// 		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-	// 		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-	//
-	// 		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-	// 		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-	// 		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-	// 	},
-	// }
-
-	httpsd := &http.Server{
+	httpd := &http.Server{
 		Handler:        r,
 		Addr:           ":80",
 		WriteTimeout:   httpTimeout,
@@ -223,14 +162,13 @@ func main() {
 		logger.Fatalf("listen failed: %s", err)
 		return
 	}
-	//tlsListener := tls.NewListener(tcpKeepAliveListener{tcpListener.(*net.TCPListener)}, &tlsConfig)
 
 	logger.Infof("Subspace version: %s %s", version, &url.URL{
 		Scheme: "http",
 		Host:   httpHost,
 		Path:   "/",
 	})
-	logger.Fatal(httpsd.Serve(tcpListener))
+	logger.Fatal(httpd.Serve(tcpListener))
 }
 
 type tcpKeepAliveListener struct {
