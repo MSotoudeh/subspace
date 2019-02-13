@@ -75,13 +75,8 @@ go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=$
 echo "GOPATH: "$GOPATH
 cd $GOPATH
 
-rm $PWD/bin/subspace
-cp bin/subspace-linux-amd64 $PWD/bin/subspace
 rm /usr/local/bin/subspace
 cp bin/subspace-linux-amd64 /usr/local/bin/subspace
-
-#cp conf.sh bin/conf.sh
-#cp base.sh bin/base.sh
 
 chmod +x /bin/ /usr/local/bin/subspace
 sudo bash "scripts/sed.sh"
