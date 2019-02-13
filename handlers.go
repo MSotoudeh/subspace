@@ -260,7 +260,6 @@ cat <<WGPEER >peers/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
 AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,fd00::10:97:{{$.Profile.Number}}/128
-
 WGPEER
 
     cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
@@ -271,7 +270,7 @@ Address = 10.99.97.{{$.Profile.Number}}/22,fd00::10:97:{{$.Profile.Number}}/112
 
 [Peer]
 PublicKey = $(cat server.public)
-Endpoint = {{$.Domain}}:51820
+Endpoint = {{$.Domain}}:80
 AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
 qrencode -t PNG -o clients/{{$.Profile.PNG}}.png < clients/{{$.Profile.ID}}.conf
@@ -351,6 +350,13 @@ func indexHandler(w *Web) {
 	profiles := config.ListProfiles()
 
 	w.Profiles = profiles
+	w.HTML()
+}
+
+func statusHandler(w *Web) {
+	// status := config.ListStatus()
+	//
+	// w.Status = status
 	w.HTML()
 }
 

@@ -1,5 +1,11 @@
-GIT_DIR = "/opt/subspace"
-GO_DIR = "/usr/local/go"
+#GIT_DIR="/opt/subspace"
+GIT_DIR=$(pwd)
+echo $GIT_DIR
+GO_DIR="/usr/local/go"
+export PATH="/usr/local/go/bin:$PATH";
+export GOPATH="$GIT_DIR";
+export PATH="$GOPATH/bin:/usr/local/go/bin:$PATH";
+go version
 
 apt-get update
 apt-get install dirmngr
@@ -23,6 +29,7 @@ apt-get install -y --no-install-recommends g++ gcc libc6-dev make pkg-config
 
 #update system and remove apt lists
 apt-get install -y git
+
 # clone git
 if [ ! -d "$GIT_DIR" ]; then
   git clone https://github.com/BankaiNoJutsu/subspace /opt/subspace
@@ -32,6 +39,7 @@ fi
 GOLANG_VERSION='1.11.5'
 
 # install golang
+
 if [ ! -d "$GO_DIR" ]; then
   url="https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz";
   wget -O go.tgz "$url";
@@ -39,11 +47,43 @@ if [ ! -d "$GO_DIR" ]; then
   rm go.tgz;
 fi
 
-export PATH="/usr/local/go/bin:$PATH";
-go version
+mkdir -p "$GOPATH/src" "$GOPATH/bin" #&& chmod -R 777 "$GOPATH"
 
-export GOPATH="/opt/subspace"
-export PATH="$GOPATH/bin:/usr/local/go/bin:$PATH"
-
-mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 cd $GOPATH
+
+go get -v \
+    github.com/jteeuwen/go-bindata/... \
+    github.com/dustin/go-humanize \
+    github.com/julienschmidt/httprouter \
+    github.com/Sirupsen/logrus \
+    github.com/gorilla/securecookie \
+    golang.org/x/crypto/acme/autocert \
+    golang.org/x/time/rate \
+    golang.org/x/crypto/bcrypt \
+    go.uber.org/zap \
+    gopkg.in/gomail.v2
+
+GODEBUG="netdns=go http2server=0"
+
+./bin/go-bindata --pkg main static/... templates/... email/...
+go fmt
+go vet --all
+
+CGO_ENABLED=0
+GOOS="linux"
+GOARCH="amd64"
+BUILD_VERSION="0.1"
+#go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o /usr/bin/subspace-linux-amd64
+go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o subspace-linux-amd64
+
+cp subspace-linux-amd64 /opt/subspace/bin/subspace
+#cp entrypoint.sh /opt/subspace/bin/entrypoint.sh
+cp conf.sh /opt/subspace/bin/conf.sh
+cp base.sh /opt/subspace/bin/base.sh
+
+#ENV DEBIAN_FRONTEND noninteractive
+
+#chmod +x /opt/subspace/bin/ /opt/subspace/bin/entrypoint.sh
+chmod +x /opt/subspace/bin/ /opt/subspace/bin/conf.sh
+#bash "/usr/local/bin/entrypoint.sh"
+sudo bash "/opt/subspace/bin/conf.sh"

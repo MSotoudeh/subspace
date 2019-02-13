@@ -123,6 +123,7 @@ func main() {
 	//
 	r := &httprouter.Router{}
 	r.GET("/", Log(WebHandler(indexHandler, "index")))
+	r.GET("/status", Log(WebHandler(statusHandler, "status")))
 	r.GET("/help", Log(WebHandler(helpHandler, "help")))
 	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))

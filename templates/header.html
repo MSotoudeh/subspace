@@ -25,7 +25,8 @@
                     <a class="item" href="{{.Backlink}}"><i class="large home icon"></i></a>
                 {{end}}
                 <a href="/" class="{{if eq $.Section "index"}}active{{end}} item">Subspace</a>
-                
+                <a href="/status" class="{{if eq $.Section "status"}}active{{end}} item">Status</a>
+
                 {{if eq $.Section "signin" "forgot"}}
                     <!-- Don't show -->
                 {{else}}
