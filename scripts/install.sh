@@ -48,7 +48,7 @@ mkdir -p "$GOPATH/src" "$GOPATH/bin" #&& chmod -R 777 "$GOPATH"
 cd $GOPATH
 
 go get -v \
-    github.com/jteeuwen/go-bindata/... \
+    github.com/jteeuwen/go-bindata/ \
     github.com/dustin/go-humanize \
     github.com/julienschmidt/httprouter \
     github.com/Sirupsen/logrus \
@@ -61,7 +61,6 @@ go get -v \
 
 GODEBUG="netdns=go http2server=0"
 
-echo $(pwd)
 ./bin/go-bindata --pkg main static/... templates/... email/...
 go fmt
 go vet --all
@@ -72,10 +71,6 @@ GOARCH="amd64"
 BUILD_VERSION="0.1"
 #go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o /usr/bin/subspace-linux-amd64
 go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o bin/subspace-linux-amd64
-
-cd src/github.com/jteeuwen/go-bindata/
-echo $(pwd)
-go build
 
 echo "GOPATH: "$GOPATH
 cd $GOPATH
