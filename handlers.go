@@ -257,27 +257,28 @@ cd /etc/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-
 wg set wg0 peer ${wg_public_key} allowed-ips 10.99.97.{{$.Profile.Number}}/32,fd00::10:97:{{$.Profile.Number}}/128
 
-cat <<WGPEER >peers/{{$.Profile.ID}}.conf
+mkdir peers/{{$.Profile.Name}}
+cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
 AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,fd00::10:97:{{$.Profile.Number}}/128
 WGPEER
 
-    cat <<WGCLIENT >clients/{{$.Profile.ID}}.conf
+mkdir clients/{{$.Profile.Name}}
+cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
 DNS = 10.99.97.1, fd00::10:97:1
 Address = 10.99.97.{{$.Profile.Number}}/22,fd00::10:97:{{$.Profile.Number}}/112
 
 [Peer]
-PublicKey = $(cat server.public)
+PublicKey = $(cat server/server.public)
 Endpoint = {{$.Domain}}:80
 AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
-qrencode -t PNG -o clients/{{$.Profile.PNG}}.png < clients/{{$.Profile.ID}}.conf
+qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 	_, err = bash(script, struct {
 		Profile Profile
@@ -330,11 +331,11 @@ func deleteProfileHandler(w *Web) {
 	script := `
 # WireGuard
 cd /etc/wireguard
-peerid=$(cat peers/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
+peerid=$(cat peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
 wg set wg0 peer $peerid remove
-rm peers/{{$.Profile.ID}}.conf
-rm clients/{{$.Profile.ID}}.conf
-rm clients/{{$.Profile.PNG}}.png
+rm peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+rm clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png
 `
 	output, err := bash(script, struct {
 		Profile Profile

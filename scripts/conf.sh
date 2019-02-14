@@ -17,7 +17,7 @@ if ! [ $(id -u) = 0 ]; then echo -e "Please run this script as sudo or root"; ex
 # /etc/wireguard
 # folder each: server, clients, peers, config
 #
-if ! test -f /etc/wireguard/server.private ; then
+if ! test -f /etc/wireguard/server/server.private ; then
     mkdir /etc/wireguard
     cd /etc/wireguard
 
@@ -25,21 +25,24 @@ if ! test -f /etc/wireguard/server.private ; then
     touch clients/null.conf # So you can cat *.conf safely
     mkdir peers
     touch peers/null.conf # So you can cat *.conf safely
+    mkdir server
+    mkdir config
 
     # Generate public/private server keys.
-    wg genkey | tee server.private | wg pubkey > server.public
+    wg genkey | tee server/server.private | wg pubkey > server/server.public
 else
     echo -e "${YELLOW}> Server already exists!${NC}"
     echo ""
 fi
 
-cat <<WGSERVER >/etc/wireguard/server.conf
+cat <<WGSERVER >/etc/wireguard/server/server.conf
 [Interface]
-PrivateKey = $(cat /etc/wireguard/server.private)
+PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = 80
 
 WGSERVER
-cat /etc/wireguard/peers/*.conf >>/etc/wireguard/server.conf
+cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
+#find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
 
 if ip link show wg0 2>/dev/null; then
     ip link del wg0
@@ -47,7 +50,7 @@ fi
 ip link add wg0 type wireguard
 ip addr add 10.99.97.1/24 dev wg0
 ip addr add fd00::10:97:1/112 dev wg0
-wg setconf wg0 /etc/wireguard/server.conf
+wg setconf wg0 /etc/wireguard/server/server.conf
 ip link set wg0 up
 
 # subspace service
@@ -62,7 +65,7 @@ if ! test -f /etc/systemd/system/subspace.service ; then
 Description=Subspace
 
 [Service]
-ExecStart=/usr/local/bin/subspace --debug --http-host dev.local2
+ExecStart=/usr/local/bin/subspace --debug --http-host vpn.bankai.ch
 
 [Install]
 WantedBy=multi-user.target

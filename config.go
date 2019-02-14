@@ -31,19 +31,19 @@ func (p Profile) NameClean() string {
 }
 
 func (p Profile) WireGuardConfigPath() string {
-	return fmt.Sprintf("%s/clients/%s.conf", datadir, p.ID)
+	return fmt.Sprintf("%s/clients/%s/%s.conf", datadir, p.Name, p.ID)
 }
 
 func (p Profile) WireGuardConfigName() string {
-	return "wg0.conf"
+	return fmt.Sprintf("%s%s", p.Name, ".conf")
 }
 
 func (p Profile) WireGuardPNGPath() string {
-	return fmt.Sprintf("%s/clients/%s.png", datadir, p.PNG)
+	return fmt.Sprintf("%s/clients/%s/%s.png", datadir, p.Name, p.PNG)
 }
 
 func (p Profile) WireGuardPNGName() string {
-	return "wg0.png"
+	return fmt.Sprintf("%s%s", p.Name, ".png")
 }
 
 type Info struct {
