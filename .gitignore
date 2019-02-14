@@ -1,3 +1,7 @@
 pkg/
+
 src/
+
 bindata.go
+
+bin/subspace-linux-amd64

@@ -1,9 +1,21 @@
 #!/bin/bash
 #
+# Colors to use for output
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+ORANGE='\033[1;166;4m'
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+LIGHTBLUE='\033[1;36m'
+NC='\033[0m' # No Color
+
 # Check if user is root or sudo
 if ! [ $(id -u) = 0 ]; then echo -e "Please run this script as sudo or root"; exit 1 ; fi
 
 # WireGuard (10.99.97.0/24)
+#
+# /etc/wireguard
+# folder each: server, clients, peers, config
 #
 if ! test -f /etc/wireguard/server.private ; then
     mkdir /etc/wireguard
@@ -17,7 +29,8 @@ if ! test -f /etc/wireguard/server.private ; then
     # Generate public/private server keys.
     wg genkey | tee server.private | wg pubkey > server.public
 else
-    echo "Server already exists!"
+    echo -e "${YELLOW}> Server already exists!${NC}"
+    echo ""
 fi
 
 cat <<WGSERVER >/etc/wireguard/server.conf
@@ -49,7 +62,7 @@ if ! test -f /etc/systemd/system/subspace.service ; then
 Description=Subspace
 
 [Service]
-ExecStart=/usr/local/bin/subspace --debug --http-host localhost
+ExecStart=/usr/local/bin/subspace --debug --http-host dev.local2
 
 [Install]
 WantedBy=multi-user.target
@@ -59,15 +72,3 @@ SSERVICE
     systemctl start subspace
     systemctl status subspace
 fi
-
-# subspace service log
-# if ! dev.local -f /etc/systemd/system/subspace-log.service ; then
-#     mkdir /etc/sv/subspace/log
-#     mkdir /etc/sv/subspace/log/main
-#     cat <<SLOGSERVICE >/etc/sv/subspace/log/run
-# #!/bin/sh
-# exec svlogd -tt ./main
-# SLOGSERVICE
-#     chmod +x /etc/sv/subspace/log/run
-#     ln -s /etc/sv/subspace /etc/service/subspace
-# fi

@@ -249,10 +249,14 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
+	// /etc/wireguard
+	// folder each: server, clients, peers, config
+	//
 	script := `
 cd /etc/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
+
 
 wg set wg0 peer ${wg_public_key} allowed-ips 10.99.97.{{$.Profile.Number}}/32,fd00::10:97:{{$.Profile.Number}}/128
 
@@ -320,6 +324,9 @@ func deleteProfileHandler(w *Web) {
 		return
 	}
 
+	// /etc/wireguard
+	// folder each: server, clients, peers, config
+	//
 	script := `
 # WireGuard
 cd /etc/wireguard
