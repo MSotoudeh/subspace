@@ -275,7 +275,7 @@ Address = 10.99.97.{{$.Profile.Number}}/22,fd00::10:97:{{$.Profile.Number}}/112
 
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:80
+Endpoint = {{$.Domain}}:5555
 AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
 qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
@@ -329,13 +329,14 @@ func deleteProfileHandler(w *Web) {
 	// folder each: server, clients, peers, config
 	//
 	script := `
-# WireGuard
 cd /etc/wireguard
 peerid=$(cat peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
 wg set wg0 peer $peerid remove
 rm peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 rm clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png
+rm -rf peers/{{$.Profile.Name}}
+rm -rf clients/{{$.Profile.Name}}
 `
 	output, err := bash(script, struct {
 		Profile Profile
@@ -408,6 +409,51 @@ func settingsHandler(w *Web) {
 	})
 
 	w.Redirect("/?success=settings")
+}
+
+func emailsettingsHandler(w *Web) {
+	// if w.r.Method == "GET" {
+	// 	w.HTML()
+	// 	return
+	// }
+	//
+	// from := strings.ToLower(strings.TrimSpace(w.r.FormValue("from")))
+	// server := strings.ToLower(strings.TrimSpace(w.r.FormValue("server")))
+	// port := w.r.FormValue("port")
+	// username := strings.ToLower(strings.TrimSpace(w.r.FormValue("username")))
+	// password := w.r.FormValue("password")
+	//
+	// if from != "" || server != "" || server != "" || port != "" || username != "" || password != "" {
+	// 	if err := bcrypt.CompareHashAndPassword(config.FindInfo().Mail, []byte(password)); err != nil {
+	// 		w.Redirect("/settings?error=invalid")
+	// 		return
+	// 	}
+	//
+	// 	if err != nil {
+	// 		w.Redirect("/emailsettings?error=empty")
+	// 		return
+	// 	}
+	//
+	// 	config.UpdateInfo(func(i *Info) error {
+	// 		i.Mail.From = from
+	// 		i.Mail.Server = server
+	// 		i.Mail.Port = port
+	// 		i.Mail.Username = username
+	// 		i.Mail.Password = password
+	// 		return nil
+	// 	})
+	// }
+	//
+	// config.UpdateInfo(func(i *Info) error {
+	// 	i.Mail.From = from
+	// 	i.Mail.Server = server
+	// 	i.Mail.Port = port
+	// 	i.Mail.Username = username
+	// 	i.Mail.Password = password
+	// 	return nil
+	// })
+	//
+	// w.Redirect("/?success=settings")
 }
 
 func helpHandler(w *Web) {

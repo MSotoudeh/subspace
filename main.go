@@ -130,6 +130,8 @@ func main() {
 
 	r.GET("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
+	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
+	r.POST("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
 	r.GET("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.POST("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.GET("/profiles/connect/:profile", Log(WebHandler(connectProfileHandler, "profiles/connect")))
