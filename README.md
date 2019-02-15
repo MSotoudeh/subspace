@@ -12,6 +12,9 @@
   * Removes client key and disconnects client.
 * **Auto-generated Configs**
   * Each client gets a unique downloadable config file.
+* **QR Code for client**
+  * Each client gets a unique QR code to import the config
+  
 
 ## Run Subspace on Portal Cloud
 
