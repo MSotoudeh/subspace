@@ -1,0 +1,60 @@
+{{template "header.html" .}}
+
+<div class="ui hidden divider"></div>
+
+<div class="ui container">
+    <div class="ui padded segment">
+        <div class="ui huge green dividing header">Email Settings</div>
+        <div class="ui hidden divider"></div>
+
+        {{with $error := .Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else if eq $error "emptywrongtype"}}
+                            Please check that no field is empty, and that types are correct
+                        {{else}}
+                            Error. Please try again.
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        <form class="ui huge form" action="/emailsettings" method="POST" novalidate autocomplete="off">
+            <div class="field">
+                <div class="ui small header">From Address</div>
+                <input name="from" type="email" placeholder="From Address" value="{{$.Info.Mail.From}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Server Address</div>
+                <input name="server" type="text" placeholder="Server Address" value="{{$.Info.Mail.Server}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Port</div>
+                <input name="port" type="text" placeholder="Port" value="{{$.Info.Mail.Port}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Username</div>
+                <input name="username" type="text" placeholder="Username" value="{{$.Info.Mail.Username}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Password</div>
+                <input name="password" type="password" placeholder="Password" value="{{$.Info.Mail.Password}}">
+            </div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <button type="submit" class="ui huge fluid green button">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}

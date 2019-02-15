@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -278,7 +279,7 @@ PublicKey = $(cat server/server.public)
 Endpoint = {{$.Domain}}:5555
 AllowedIPs = 0.0.0.0/0, ::/0
 WGCLIENT
-qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 	_, err = bash(script, struct {
 		Profile Profile
@@ -334,7 +335,7 @@ peerid=$(cat peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf | perl -ne 'print $1
 wg set wg0 peer $peerid remove
 rm peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-rm clients/{{$.Profile.Name}}/{{$.Profile.PNG}}.png
+rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png
 rm -rf peers/{{$.Profile.Name}}
 rm -rf clients/{{$.Profile.Name}}
 `
@@ -412,48 +413,39 @@ func settingsHandler(w *Web) {
 }
 
 func emailsettingsHandler(w *Web) {
-	// if w.r.Method == "GET" {
-	// 	w.HTML()
-	// 	return
-	// }
-	//
-	// from := strings.ToLower(strings.TrimSpace(w.r.FormValue("from")))
-	// server := strings.ToLower(strings.TrimSpace(w.r.FormValue("server")))
-	// port := w.r.FormValue("port")
-	// username := strings.ToLower(strings.TrimSpace(w.r.FormValue("username")))
-	// password := w.r.FormValue("password")
-	//
-	// if from != "" || server != "" || server != "" || port != "" || username != "" || password != "" {
-	// 	if err := bcrypt.CompareHashAndPassword(config.FindInfo().Mail, []byte(password)); err != nil {
-	// 		w.Redirect("/settings?error=invalid")
-	// 		return
-	// 	}
-	//
-	// 	if err != nil {
-	// 		w.Redirect("/emailsettings?error=empty")
-	// 		return
-	// 	}
-	//
-	// 	config.UpdateInfo(func(i *Info) error {
-	// 		i.Mail.From = from
-	// 		i.Mail.Server = server
-	// 		i.Mail.Port = port
-	// 		i.Mail.Username = username
-	// 		i.Mail.Password = password
-	// 		return nil
-	// 	})
-	// }
-	//
-	// config.UpdateInfo(func(i *Info) error {
-	// 	i.Mail.From = from
-	// 	i.Mail.Server = server
-	// 	i.Mail.Port = port
-	// 	i.Mail.Username = username
-	// 	i.Mail.Password = password
-	// 	return nil
-	// })
-	//
-	// w.Redirect("/?success=settings")
+	if w.r.Method == "GET" {
+		w.HTML()
+		return
+	}
+
+	from := strings.ToLower(strings.TrimSpace(w.r.FormValue("from")))
+	server := strings.ToLower(strings.TrimSpace(w.r.FormValue("server")))
+	port := w.r.FormValue("port")
+	username := strings.ToLower(strings.TrimSpace(w.r.FormValue("username")))
+	password := w.r.FormValue("password")
+
+	int_port, err := strconv.Atoi(port)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if from != "" || server != "" || port != "" || username != "" || password != "" {
+		if err != nil {
+			w.Redirect("/emailsettings?error=emptywrongtype")
+			return
+		}
+	}
+
+	config.UpdateInfo(func(i *Info) error {
+		i.Mail.From = from
+		i.Mail.Server = server
+		i.Mail.Port = int_port
+		i.Mail.Username = username
+		i.Mail.Password = password
+		return nil
+	})
+
+	w.Redirect("/?success=emailsettings")
 }
 
 func helpHandler(w *Web) {
