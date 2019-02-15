@@ -1,12 +1,16 @@
 #!/bin/bash
 #
 # Colors to use for output
+#printf '\e[48;5;232m Background color: black\n' && printf '\e[38;5;255m Foreground color: white\n'
+#printf '\e[48;5;021m Background color: blue\n' && printf '\e[38;5;255m Foreground color: white\n'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 ORANGE='\033[1;166;4m'
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 LIGHTBLUE='\033[1;36m'
+WHITE='\e[38;5;255m'
+BLACK='\033[5;232m'
 NC='\033[0m' # No Color
 
 echo -e "${LIGHTBLUE}> Stopping service ${NC}"
@@ -39,8 +43,9 @@ modprobe ip6table_nat
 
 echo -e "${LIGHTBLUE}> Enable IP forwarding ${NC}"
 # Enable IP forwarding
-sysctl -w net.ipv4.ip_forward=1
-sysctl -w net.ipv6.conf.all.forwarding=1
+printf ${WHITE}
+echo ">> "$(sysctl -w net.ipv4.ip_forward=1)
+echo ">> "$(sysctl -w net.ipv6.conf.all.forwarding=1)
 
 echo -e "${LIGHTBLUE}> Install build tools ${NC}"
 # gcc for cgo

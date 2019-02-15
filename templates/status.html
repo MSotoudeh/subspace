@@ -1,39 +1,33 @@
 {{template "header.html" .}}
 
 <div class="ui container">
-
-      <div class="ui padded segment">
-          <div class="ui huge green dividing header">
-              Status
+  <div class="ui padded segment">
+    <div class="ui huge green dividing header">
+        Status
+    </div>
+    <div class="ui hidden divider"></div>
+    <div class="ui three stackable cards">
+      <div class="show-profile green card">
+          <div class="content">
+              <div class="header">
+              </div>
           </div>
-          <div class="ui hidden divider"></div>
-  {{if $.Status}}
-          <div class="ui three stackable cards">
-              {{range $n, $p := $.Status}}
-                  <div class="show-profile green card">
+          <div class="extra content">
+              <div class="ui large list">
+                  <div class="item">
+                      <i class="calendar icon"></i>
                       <div class="content">
                           <div class="header">
                           </div>
                       </div>
-                      <div class="extra content">
-                          <div class="ui large list">
-                              <div class="item">
-                                  <i class="calendar icon"></i>
-                                  <div class="content">
-                                      <div class="header">
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="extra content">
-                      </div>
                   </div>
-              {{end}}
+              </div>
+          </div>
+          <div class="extra content">
           </div>
       </div>
-  {{end}}
-
+    </div>
+  </div>
 </div>
 
 {{template "footer.html" .}}

@@ -41,9 +41,6 @@ type Web struct {
 	// Additional
 	Profile  Profile
 	Profiles []Profile
-
-	// Additional for Status page
-	// Status	Status
 }
 
 func init() {

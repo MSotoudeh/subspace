@@ -18,8 +18,8 @@ var (
 )
 
 type Profile struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
 	Platform string    `json:"platform"`
 	Number   int       `json:"number"`
 	Created  time.Time `json:"created"`
@@ -161,8 +161,8 @@ func (c *Config) AddProfile(name, platform string) (Profile, error) {
 		}
 	}
 	profile := Profile{
-		ID:   id,
-		Name: name,
+		ID:       id,
+		Name:     name,
 		Platform: platform,
 		Number:   number,
 		Created:  time.Now(),

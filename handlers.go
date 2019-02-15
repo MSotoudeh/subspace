@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -364,9 +365,14 @@ func indexHandler(w *Web) {
 }
 
 func statusHandler(w *Web) {
-	// status := config.ListStatus()
-	//
-	// w.Status = status
+	//cat /sys/class/net/*/operstate
+	out, err := exec.Command("wg show all dump").Output()
+	if err != nil {
+		fmt.Printf("%s", err)
+	}
+	output := string(out[:])
+	fmt.Println(output)
+
 	w.HTML()
 }
 
