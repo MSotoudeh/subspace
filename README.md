@@ -156,5 +156,6 @@ $ sudo docker create ... (see above)
 - Disconnect clients
 - Theming
 - Multiuser
-- 
+- Dyndns
+
 
