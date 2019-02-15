@@ -16,13 +16,8 @@
   * Each client gets a unique QR code to import the config
   
 
-## Run Subspace on Portal Cloud
 
-Portal Cloud is a hosting service that enables anyone to run open source cloud applications.
-
-[Sign up for Portal Cloud](https://portal.cloud/) and get $15 free credit with code **Portal15**.
-
-## Run Subspace on a VPS
+## Run Subspace on your own
 
 Running Subspace on a VPS is designed to be as simple as possible.
 
@@ -160,5 +155,6 @@ $ sudo docker create ... (see above)
 - Theming
 - Multiuser
 - Dyndns
+- Ability to choose between http and https
 
 
