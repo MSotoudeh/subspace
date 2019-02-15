@@ -150,7 +150,11 @@ $ sudo docker rm subspace
 $ sudo docker create ... (see above)
 ```
 
-## Help / Reporting Bugs
+## TO DO
 
-Email support@portal.cloud
+- Status page
+- Disconnect clients
+- Theming
+- Multiuser
+- 
 
