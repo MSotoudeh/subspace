@@ -14,8 +14,8 @@
   * Each client gets a unique downloadable config file.
 * **QR Code for client**
   * Each client gets a unique QR code to import the config
-  
-
+* **HTTP or HTTPS**
+  * You can choose if you want auto https or if you want to run behind a reverse
 
 ## Run Subspace on your own
 
@@ -155,6 +155,7 @@ $ sudo docker create ... (see above)
 - Theming
 - Multiuser
 - Dyndns
-- Ability to choose between http and https
+- Ability to choose between http and https (DONE)
+- Create new docker image
 
 
