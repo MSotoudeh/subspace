@@ -27,7 +27,7 @@ echo -e "${LIGHTBLUE}> Actual go version is: ${NC}"${YELLOW}$(go version)${NC}
 echo -e "${LIGHTBLUE}> Running apt update... ${NC}"
 apt-get update >/dev/null 2>&1
 echo -e "${LIGHTBLUE}> Install dirmngr and qrencode ${NC}"
-apt-get install dirmngr qrencode >/dev/null 2>&1
+apt-get install dirmngr qrencode -y >/dev/null 2>&1
 
 echo -e "${LIGHTBLUE}> Install WireGuard ${NC}"
 echo "deb http://deb.debian.org/debian/ unstable main" > /etc/apt/sources.list.d/unstable-wireguard.list
