@@ -21,19 +21,19 @@
     {{end}}
 
     <div class="ui very padded segment">
-        <div class="ui huge green dividing header">
+        <div class="ui huge black dividing header">
             How to connect {{$.Profile.Name}}
         </div>
         <div class="ui hidden divider"></div>
 
         {{if eq $.Profile.Platform "windows"}}
-            <div class="ui large green header"><i class="windows icon"></i> Windows &mdash; Instructions</div>
+            <div class="ui large black header"><i class="windows icon"></i> Windows &mdash; Instructions</div>
             <ol class="ui huge list">
                 <li>
                     Download and install the WireGuard client <a href="https://tunsafe.com/downloads/TunSafe-1.4.exe">TunSafe</a>
                 </li>
                 <li>
-                    <a href="/profiles/config/wireguard/{{$.Profile.ID}}">Download your WireGuard config</a> and import it into TunSafe
+                    <a class="link-color" href="/profiles/config/wireguard/{{$.Profile.ID}}">Download your WireGuard config</a> and import it into TunSafe
                 </li>
                 <li>
                     Run TunSafe <i class="angle right"></i> go to File <i class="angle right"></i> Import File and select your config
@@ -46,7 +46,7 @@
                 </li>
             </ol>
         {{else if eq $.Profile.Platform "osx"}}
-            <div class="ui large blue header"><i class="apple icon"></i> Mac OS &mdash; Instructions</div>
+            <div class="ui large black header"><i class="apple icon"></i> Mac OS &mdash; Instructions</div>
             <ol class="ui huge list">
                 <li>Install the <a target="_blank" href="https://brew.sh/">Homebrew</a> package manager</li>
                 <li>In your terminal, run <b>brew install wireguard-tools</b></li>
@@ -58,7 +58,7 @@
                 </li>
             </ol>
         {{else if eq $.Profile.Platform "ios"}}
-            <div class="ui large blue header"><i class="apple icon"></i> iOS (iPhone/iPad) &mdash; Instructions</div>
+            <div class="ui large black header"><i class="apple icon"></i> iOS (iPhone/iPad) &mdash; Instructions</div>
             <ol class="ui huge list">
                 <li>
                     Install <a target="_blank" href="https://itunes.apple.com/us/app/wireguard/id1441195209">WireGuard</a> from the App Store
@@ -77,7 +77,7 @@
                 </li>
             </ol>
         {{else if eq $.Profile.Platform "android"}}
-            <div class="ui large blue header"><i class="android icon"></i> Android &mdash; Instructions</div>
+            <div class="ui large black header"><i class="android icon"></i> Android &mdash; Instructions</div>
             <ol class="ui huge list">
                 <li>
                     Install <a target="_blank" href="https://play.google.com/store/apps/details?id=com.wireguard.android">WireGuard for Android</a>
@@ -93,7 +93,7 @@
                 </li>
             </ol>
         {{else}}
-            <div class="ui large blue header"><i class="asterisk icon"></i> WireGuard</div>
+            <div class="ui large black header"><i class="asterisk icon"></i> WireGuard</div>
             <ol class="ui huge list">
                 <li>
                     Install <a target="_blank" href="https://www.wireguard.com/install/">WireGuard</a>

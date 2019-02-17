@@ -23,6 +23,15 @@ body {
     top: 5px;
 }
 
+a.link-color {
+    color: #000 !important;
+    text-decoration: underline;
+}
+
+a.link-color:hover {
+  color: #000 !important;
+}
+
 .copylink {
     color: yellow !important;
     background-color: #444 !important;

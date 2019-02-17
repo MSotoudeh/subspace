@@ -41,8 +41,8 @@
             <div class="column">
                 <div class="ui hidden divider"></div>
                 <div class="ui huge center aligned icon header">
-                    <i class="green clockwise rotated strikethrough icon"></i>
-                    <div class="content">Subspace is online</div>
+                    <i class="icon"><img src="static/wireguard.png" alt="Wireguard" height="80" width="80"></i>
+                    <div class="content">Wireguard is online</div>
                 </div>
                 <div class="ui hidden divider"></div>
             </div>
@@ -57,16 +57,16 @@
                             <i class="dropdown icon"></i>
                             <div class="default text">Select platform</div>
                             <div class="menu">
-                                <div class="item" data-value="windows"><i class="green windows icon"></i>Windows</div>
-                                <div class="item" data-value="osx"><i class="green apple icon"></i>Mac OS X</div>
-                                <div class="item" data-value="ios"><i class="green apple icon"></i>iOS</div>
-                                <div class="item" data-value="android"><i class="green android icon"></i>Android</div>
-                                <div class="item" data-value="other"><i class="green asterisk dot icon"></i>Other</div>
+                                <div class="item" data-value="windows"><i class="black windows icon"></i>Windows</div>
+                                <div class="item" data-value="osx"><i class="black apple icon"></i>Mac OS X</div>
+                                <div class="item" data-value="ios"><i class="black apple icon"></i>iOS</div>
+                                <div class="item" data-value="android"><i class="black android icon"></i>Android</div>
+                                <div class="item" data-value="other"><i class="black asterisk dot icon"></i>Other</div>
                             </div>
                         </div>
                     </div>
                     <div class="field">
-                        <button type="submit" class="ui huge green fluid button">Add device</button>
+                        <button type="submit" class="ui huge black fluid button">Add device</button>
                     </div>
                 </form>
             </div>
@@ -77,14 +77,14 @@
 
     {{if $.Profiles}}
         <div class="ui padded segment">
-            <div class="ui huge green dividing header">
+            <div class="ui huge black dividing header">
                 Devices
             </div>
             <div class="ui hidden divider"></div>
 
             <div class="ui three stackable cards">
                 {{range $n, $p := $.Profiles}}
-                    <div class="show-profile green card">
+                    <div class="show-profile card">
                         <a href="/profiles/delete/{{$p.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
                         <div class="content">
                             <div class="header">
@@ -116,7 +116,7 @@
                             </div>
                         </div>
                         <div class="extra content">
-                            <a href="/profiles/connect/{{$p.ID}}" class="ui large basic green fluid button">Connect device</a>
+                            <a href="/profiles/connect/{{$p.ID}}" class="ui large basic black fluid button">Connect device</a>
                         </div>
                     </div>
                 {{end}}

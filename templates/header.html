@@ -19,12 +19,13 @@
     </head>
     <body>
 
-        <div class="borderless ui big green inverted menu">
+        <div class="borderless ui big black inverted menu">
             <div class="ui container">
                 {{if $.Backlink}}
                 <a class="item" href="{{.Backlink}}"><i class="large home icon"></i></a>
                 {{end}}
-                <a href="/" class="{{if eq $.Section "index"}}active{{end}} item"><i class="large home icon"></i>Home</a>
+                <a href="/" class="item"><img class="icon" src="/static/wireguard.png"></i></a>
+                <a href="/" class="{{if eq $.Section "index"}}active{{end}} item"></i>Home</a>
                 <a href="/status" class="{{if eq $.Section "status"}}active{{end}} item">Status</a>
 
                 {{if eq $.Section "signin" "forgot"}}
