@@ -15,6 +15,7 @@ import (
 
 var (
 	SessionCookieName = "__subspace_session"
+	cookieissecure    = false
 )
 
 type Session struct {
@@ -41,6 +42,8 @@ type Web struct {
 	// Additional
 	Profile  Profile
 	Profiles []Profile
+
+	Status string
 }
 
 func init() {
@@ -220,13 +223,21 @@ func NewSessionCookie(r *http.Request) (*http.Cookie, error) {
 		return nil, fmt.Errorf("auth: encoding error: %s", err)
 	}
 
+	if server_type == "http" {
+		cookieissecure = false
+	}
+	if server_type == "https" {
+		cookieissecure = true
+	}
+
 	cookie := &http.Cookie{
 		Name:     SessionCookieName,
 		Value:    encoded,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   cookieissecure,
 		Expires:  expires,
 	}
 	return cookie, nil
+
 }

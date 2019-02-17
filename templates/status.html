@@ -6,27 +6,57 @@
         Status
     </div>
     <div class="ui hidden divider"></div>
-    <div class="ui three stackable cards">
-      <div class="show-profile card">
-          <div class="content">
-              <div class="header">
-              </div>
-          </div>
-          <div class="extra content">
-              <div class="ui large list">
-                  <div class="item">
-                      <div class="content">
-                          <div class="header">
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-          <div class="extra content">
-          </div>
+      <div class="ui two stackable cards">
+         {{if $.Status}}
+            <div class="show-profile card">
+                <a href="/profiles/delete/" class="ui right corner label "><i class="trash alternate icon"></i></a>
+                <div class="content">
+                    <div class="header">
+                        <i class="icon"></i>
+                    </div>
+                </div>
+                <div class="extra content">
+                    <div class="ui large list">
+                        <div class="item">
+                            <i class="calendar icon"></i>
+                            <div class="content">
+                                <div class="header">
+                                {{$.Status}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="extra content">
+                    <a href="/profiles/connect/" class="ui large basic black fluid button">Disconnect device</a>
+                </div>
+            </div>
+            <div class="show-profile card">
+                <a href="/profiles/delete/" class="ui right corner label "><i class="trash alternate icon"></i></a>
+                <div class="content">
+                    <div class="header">
+                        <i class="icon"></i>
+                    </div>
+                </div>
+                <div class="extra content">
+                    <div class="ui large list">
+                        <div class="item">
+                            <i class="calendar icon"></i>
+                            <div class="content">
+                                <div class="header">
+                                  {{$.Status}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="extra content">
+                    <a href="/profiles/connect/" class="ui large basic black fluid button">Disconnect device</a>
+                </div>
+            </div>
+          {{end}}
       </div>
     </div>
-  </div>
 </div>
 
 {{template "footer.html" .}}

@@ -366,13 +366,18 @@ func indexHandler(w *Web) {
 
 func statusHandler(w *Web) {
 	//cat /sys/class/net/*/operstate
-	out, err := exec.Command("wg show all dump").Output()
+	//out, err := exec.Command("wg", "show", "all", "dump").Output()
+	out, err := exec.Command("wg", "show", "all").Output()
 	if err != nil {
 		fmt.Printf("%s", err)
 	}
-	output := string(out[:])
-	fmt.Println(output)
+	output := string(out)
+	output2 := strings.Split(output, "\n")
 
+	name, value := output2[0], output2[5]
+	fmt.Println(name, value)
+
+	w.Status = name + "\n" + value
 	w.HTML()
 }
 
