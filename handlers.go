@@ -365,19 +365,51 @@ func indexHandler(w *Web) {
 }
 
 func statusHandler(w *Web) {
-	//cat /sys/class/net/*/operstate
-	//out, err := exec.Command("wg", "show", "all", "dump").Output()
-	out, err := exec.Command("wg", "show", "all").Output()
+	wg_dump, err := exec.Command("wg", "show", "all", "dump").Output()
 	if err != nil {
-		fmt.Printf("%s", err)
+		fmt.Printf("error is %s\n", err)
 	}
-	output := string(out)
-	output2 := strings.Split(output, "\n")
+	wg_dump_str := string(wg_dump)
+	split_line := strings.Split(wg_dump_str, "\n")
 
-	name, value := output2[0], output2[5]
-	fmt.Println(name, value)
+	var split_tab []string
+	var Serverdata = make(map[string]string)
+	var Peerdata = make(map[string]string)
+	var ok bool
 
-	w.Status = name + "\n" + value
+	for i := 0; i < (len(split_line) - 1); i++ {
+		fmt.Printf("\n")
+		split_tab = strings.Split(split_line[i], "\t")
+
+		if len(split_tab) < 9 && ok != true {
+			for j := 0; j < 1; j++ {
+				if ok != true {
+					Serverdata["Type"] = "Server"
+					Serverdata["Interface"] = split_tab[0]
+					Serverdata["Public_Key"] = split_tab[1]
+					Serverdata["Private_Key"] = split_tab[2]
+					Serverdata["Port"] = split_tab[3]
+					Serverdata["State"] = split_tab[4]
+				}
+				ok = true
+				fmt.Println(Serverdata)
+			}
+		}
+		if len(split_tab) == 9 {
+			for j := 0; j < len(split_tab); j++ {
+				Peerdata["Type"] = "Peer"
+				Peerdata["Interface"] = split_tab[0]
+				Peerdata["Public_Key"] = split_tab[1]
+				Peerdata["Allowed"] = split_tab[4]
+				Peerdata["State"] = split_tab[8]
+			}
+			fmt.Println(Peerdata)
+		}
+	}
+	w.Status.Type = Peerdata["Type"]
+	//w.Status.Allowed = Peerdata["Allowed"]
+	w.Status.Port = Peerdata["Port"]
+	w.Status.State = Peerdata["State"]
 	w.HTML()
 }
 

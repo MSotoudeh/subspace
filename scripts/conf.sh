@@ -65,7 +65,7 @@ if ! test -f /etc/systemd/system/subspace.service ; then
 Description=Subspace
 
 [Service]
-ExecStart=/usr/local/bin/subspace --debug --http-host vpn.bankai.ch
+ExecStart=/usr/local/bin/subspace --debug --http-host localhost
 
 [Install]
 WantedBy=multi-user.target

@@ -25,6 +25,14 @@ type Profile struct {
 	Created  time.Time `json:"created"`
 }
 
+type Status struct {
+	Name    string
+	Port    string
+	State   string
+	Type    string
+	Allowed string
+}
+
 func (p Profile) NameClean() string {
 	return regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(p.Name, "")
 }

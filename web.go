@@ -43,7 +43,8 @@ type Web struct {
 	Profile  Profile
 	Profiles []Profile
 
-	Status string
+	Status Status
+	Statuses []Status
 }
 
 func init() {
