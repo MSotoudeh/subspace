@@ -49,7 +49,6 @@ if ip link show wg0 2>/dev/null; then
 fi
 ip link add wg0 type wireguard
 ip addr add 10.99.97.1/24 dev wg0
-ip addr add fd00::10:97:1/112 dev wg0
 wg setconf wg0 /etc/wireguard/server/server.conf
 ip link set wg0 up
 

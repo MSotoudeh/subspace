@@ -43,7 +43,7 @@ type Web struct {
 	Profile  Profile
 	Profiles []Profile
 
-	Status Status
+	Status   Status
 	Statuses []Status
 }
 
