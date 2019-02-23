@@ -18,6 +18,9 @@ systemctl stop subspace
 GIT_DIR=$(pwd)
 echo -e "${LIGHTBLUE}> Setting GO Path to: ${NC}"${YELLOW}$GIT_DIR"${NC}"
 GO_DIR="/usr/local/go"
+ARCH=$(dpkg --print-architecture)
+echo -e "${LIGHTBLUE}> Actual arch is: ${NC}"${YELLOW}${ARCH}${NC}
+
 export PATH="/usr/local/go/bin:$PATH";
 export GOPATH="$GIT_DIR";
 export PATH="$GOPATH/bin:/usr/local/go/bin:$PATH";
@@ -57,7 +60,13 @@ GOLANG_VERSION='1.11.5'
 # install golang
 if [ ! -d "$GO_DIR" ]; then
   echo -e "${LIGHTBLUE}> Installing GO to /usr/local ${NC}"
-  url="https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz";
+  if [ $ARCH == "armhf" ]
+  then
+    url="https://dl.google.com/go/go{GOLANG_VERSION}.linux-armv6l.tar.gz";
+  elif [ $ARCH == "amd64" ]
+  then
+    url="https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz";
+  fi
   wget -O go.tgz "$url"
   tar -C /usr/local -xzf go.tgz
   rm go.tgz
@@ -85,9 +94,19 @@ go get -v \
 GODEBUG="netdns=go http2server=0"
 
 echo -e "${LIGHTBLUE}> Running go-bindata ${NC}"
+if [ $ARCH == "armhf" ]
+then
+./bin/go-bindata-arm --pkg main static/... templates/... email/...
+go fmt
+go vet --all
+fi
+
+if [ $ARCH == "amd64" ]
+then
 ./bin/go-bindata --pkg main static/... templates/... email/...
 go fmt
 go vet --all
+fi
 
 CGO_ENABLED=0
 GOOS="linux"
