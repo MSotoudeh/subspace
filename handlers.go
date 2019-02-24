@@ -406,10 +406,65 @@ func statusHandler(w *Web) {
 		}
 	}
 	w.Status.Type = Peerdata["Type"]
-	//w.Status.Allowed = Peerdata["Allowed"]
+	w.Status.Allowed = Peerdata["Allowed"]
 	w.Status.Port = Peerdata["Port"]
 	w.Status.State = Peerdata["State"]
 	w.HTML()
+}
+
+func dyndnsHandler(w *Web) {
+
+	Domain := config.Info.DynDNS.Domain
+	//FQDomain := Domain + ".duckdns.org"
+	Token := config.Info.DynDNS.Token
+
+	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	domain_ip_str := string(domain_ip_cmd)
+	DynIP := domain_ip_str
+	current_ip_str := string(current_ip_cmd)
+	CurIP := current_ip_str
+
+	w.DynDNS.Domain = Domain
+	w.DynDNS.Token = Token
+	w.DynDNS.DynIP = DynIP
+	w.DynDNS.IP = CurIP
+
+	w.HTML()
+}
+
+func UpdatedyndnsHandler(w *Web) {
+
+	Domain := config.Info.DynDNS.Domain
+	Token := config.Info.DynDNS.Token
+
+	//url := "echo url=\"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\""
+	update, err := exec.Command("echo", "url=\"https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=\"", "| curl -k -K -").Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	current_ip_str := string(current_ip_cmd)
+	CurIP := current_ip_str
+	update_str := string(update)
+
+	w.DynDNS.IP = CurIP
+	w.DynDNS.Status = update_str
+
+	w.Redirect("/dyndns?success=update_dyndns")
 }
 
 func settingsHandler(w *Web) {
@@ -488,6 +543,28 @@ func emailsettingsHandler(w *Web) {
 	})
 
 	w.Redirect("/?success=emailsettings")
+}
+
+func dyndnssettingsHandler(w *Web) {
+	if w.r.Method == "GET" {
+		w.HTML()
+		return
+	}
+
+	domain := strings.ToLower(strings.TrimSpace(w.r.FormValue("domain")))
+	token := strings.ToLower(strings.TrimSpace(w.r.FormValue("token")))
+
+	if domain == "" || token == "" {
+		w.Redirect("/dyndnssettings?error=empty")
+	}
+
+	config.UpdateInfo(func(i *Info) error {
+		i.DynDNS.Domain = domain
+		i.DynDNS.Token = token
+		return nil
+	})
+
+	w.Redirect("/?success=dyndnssettings")
 }
 
 func helpHandler(w *Web) {

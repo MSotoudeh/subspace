@@ -45,6 +45,8 @@ type Web struct {
 
 	Status   Status
 	Statuses []Status
+
+	DynDNS DynDNS
 }
 
 func init() {

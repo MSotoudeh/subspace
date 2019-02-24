@@ -33,6 +33,14 @@ type Status struct {
 	Allowed string
 }
 
+type DynDNS struct {
+	Domain string
+	Token  string
+	DynIP  string
+	IP     string
+	Status string
+}
+
 func (p Profile) NameClean() string {
 	return regexp.MustCompile(`[^a-zA-Z0-9]`).ReplaceAllString(p.Name, "")
 }
@@ -68,6 +76,10 @@ type Info struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	} `json:"mail"`
+	DynDNS struct {
+		Domain string `json:"domain"`
+		Token  string `json:"token"`
+	} `json:"dyndns"`
 }
 
 type Config struct {
