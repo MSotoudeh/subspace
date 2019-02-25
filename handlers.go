@@ -446,31 +446,21 @@ func UpdatedyndnsHandler(w *Web) {
 	Domain := config.Info.DynDNS.Domain
 	Token := config.Info.DynDNS.Token
 
-	app := "curl"
-	arg0 := "-s"
-	arg1 := "-S"
-	arg2 := "\"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\""
-
-	//url := "echo url=\"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\""
-	// update, err := exec.Command("curl -s -S \"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\"").Output()
-	update, err := exec.Command(app, arg0, arg1, arg2).Output()
+	update, err := exec.Command("curl", "https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=").Output()
 	if err != nil {
-		fmt.Printf("error is %s\n", err)
+		w.Redirect("/dyndns?error=cannotupdate")
 	}
 
-	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
-
-	current_ip_str := string(current_ip_cmd)
-	CurIP := current_ip_str
 	update_str := string(update)
 
-	w.DynDNS.IP = CurIP
-	w.DynDNS.Status = update_str
+	if update_str == "KO" {
+		w.Redirect("/dyndns?error=cannotupdate")
+	}
 
-	w.Redirect("/dyndns?success=update_dyndns")
+	if update_str == "OK" {
+		w.Redirect("/dyndns?success=update_dyndns")
+	}
+
 }
 
 func settingsHandler(w *Web) {

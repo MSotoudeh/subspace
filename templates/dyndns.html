@@ -5,13 +5,27 @@
       <div class="ui info message">
           <div class="header">
               {{if eq $success "update_dyndns"}}
-                  DynDNS updated successfully.
-                  Status is : {{$.DynDNS.Status}}
-                  New is: {{$.DynDNS.IP}}
+                  OK! DynDNS updated successfully.
+                  New IP is: {{$.DynDNS.IP}}
               {{end}}
           </div>
           <a class="close-link" href="/"><i class="close icon"></i></a>
       </div>
+  {{end}}
+  {{with $error := $.Request.FormValue "error"}}
+      <div class="ui large negative message">
+          <div class="content">
+              <div class="header">
+                  {{if eq $error "cannotupdate"}}
+                      KO! DynDNS update failed!
+                  {{else}}
+                      {{$error}}
+                  {{end}}
+              </div>
+              <a class="close-link" href="/"><i class="close icon"></i></a>
+          </div>
+      </div>
+      <div class="ui hidden divider"></div>
   {{end}}
   <div class="ui padded segment">
     <div class="ui huge black dividing header">
