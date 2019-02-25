@@ -1,0 +1,48 @@
+{{template "header.html" .}}
+
+<div class="ui hidden divider"></div>
+
+<div class="ui container">
+    <div class="ui padded segment">
+        <div class="ui huge black dividing header">DynDNS Settings</div>
+        <div class="ui hidden divider"></div>
+
+        {{with $error := .Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else if eq $error "empty"}}
+                            Please check that no field is empty
+                        {{else}}
+                            Error. Please try again.
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        <form class="ui huge form" action="/dyndnssettings" method="POST" novalidate autocomplete="off">
+            <div class="field">
+                <div class="ui small header">Domain</div>
+                <input name="domain" type="text" placeholder="Domain" value="{{$.Info.DynDNS.Domain}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Token</div>
+                <input name="token" type="text" placeholder="Token" value="{{$.Info.DynDNS.Token}}">
+            </div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <button type="submit" class="ui huge fluid black button">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}

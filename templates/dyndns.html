@@ -1,0 +1,52 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+  {{with $success := $.Request.FormValue "success"}}
+      <div class="ui info message">
+          <div class="header">
+              {{if eq $success "update_dyndns"}}
+                  DynDNS updated successfully.
+                  Status is : {{$.DynDNS.Status}}
+                  New is: {{$.DynDNS.IP}}
+              {{end}}
+          </div>
+          <a class="close-link" href="/"><i class="close icon"></i></a>
+      </div>
+  {{end}}
+  <div class="ui padded segment">
+    <div class="ui huge black dividing header">
+        DynDNS
+    </div>
+    <div class="ui hidden divider"></div>
+      {{if $.DynDNS}}
+      <div class="ui one stackable cards">
+          <div class="show-profile card">
+              <div class="content">
+                  <div class="header">
+                      {{$.DynDNS.Domain}}
+                  </div>
+              </div>
+              <div class="extra lcontent">
+                  <div class="ui large list">
+                      <div class="item">
+                          <div class="content">
+                              <div class="header">
+                                <ul>DuckDNS Domain: {{$.DynDNS.Domain}}</ul>
+                                <ul>DuckDNS Token: {{$.DynDNS.Token}}</ul>
+                                <ul>Current IP: {{$.DynDNS.IP}}</ul>
+                                <ul>DynDNS IP: {{$.DynDNS.DynIP}}</ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="extra content">
+                  <a href="/dyndns/update" class="ui large basic black fluid button">Update</a>
+              </div>
+          </div>
+      </div>
+      {{end}}
+    </div>
+</div>
+
+{{template "footer.html" .}}

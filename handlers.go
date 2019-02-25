@@ -446,8 +446,14 @@ func UpdatedyndnsHandler(w *Web) {
 	Domain := config.Info.DynDNS.Domain
 	Token := config.Info.DynDNS.Token
 
+	app := "curl"
+	arg0 := "-s"
+	arg1 := "-S"
+	arg2 := "\"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\""
+
 	//url := "echo url=\"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\""
-	update, err := exec.Command("echo", "url=\"https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=\"", "| curl -k -K -").Output()
+	// update, err := exec.Command("curl -s -S \"https://www.duckdns.org/update?domains=" + Domain + "&token=" + Token + "&ip=\"").Output()
+	update, err := exec.Command(app, arg0, arg1, arg2).Output()
 	if err != nil {
 		fmt.Printf("error is %s\n", err)
 	}
