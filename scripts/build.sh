@@ -11,6 +11,61 @@ WHITE='\e[38;5;255m'
 BLACK='\033[5;232m'
 NC='\033[0m' # No Color
 
+interactive=""
+
+while [ "$1" != "" ] || [ "$2" != "" ]; do
+    case $1 in
+        -i | --interactive )
+            shift
+            interactive="yes"
+            ;;
+    esac
+    case $1 in
+        -p | --port )
+            shift
+            port="$1"
+            interactive="yes"
+            ;;
+    esac
+    case $1 in
+        -d | --domain )
+            shift
+            domain="$1"
+            interactive="yes"
+            ;;
+    esac
+    case $2 in
+        -p | --port )
+            shift
+            port="$2"
+            interactive="yes"
+            ;;
+    esac
+    case $2 in
+        -d | --domain )
+            shift
+            domain="$2"
+            interactive="yes"
+            ;;
+    esac
+    shift
+done
+
+if test "$interactive" != 'yes'
+then
+    echo -e "${RED}For interactive mode please use -i, or use -h | --help${NC}"
+    exit 0
+fi
+
+if test "$interactive" == 'yes'
+then
+    if test "$domain" == '' || test "$port" == ''
+    then
+      echo -e "${RED}Please specify domain and port with -d and -p ${NC}"
+      exit 0
+    fi
+fi
+
 echo -e "${LIGHTBLUE}> Stopping service ${NC}"
 systemctl stop subspace
 GIT_DIR=$(pwd)
