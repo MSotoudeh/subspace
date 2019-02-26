@@ -126,7 +126,7 @@ func main() {
 	logger.Debugf("debug logging is enabled")
 
 	// config
-	config, err = NewConfig("config.json")
+	config, err = NewConfig("config/config.json")
 	if err != nil {
 		logger.Fatal(err)
 	}

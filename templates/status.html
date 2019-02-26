@@ -7,34 +7,30 @@
     </div>
     <div class="ui hidden divider"></div>
       {{if $.Statuses}}
-      <div class="ui two stackable cards">
-        {{range $n, $s := $.Statuses}}
-                <div class="show-profile card">
-                    <a href="/profiles/delete/" class="ui right corner label "><i class="trash alternate icon"></i></a>
-                    <div class="content">
-                        <div class="header">
-                            <i class="icon"></i>{{$s.Type}}
-                        </div>
-                    </div>
-                    <div class="extra lcontent">
-                        <div class="ui large list">
-                            <div class="item">
-                                <i class="calendar icon"></i>
-                                <div class="content">
-                                    <div class="header">
-                                      <ul>State: {{$s.State}}</ul>
-                                      <ul>PublicKey: {{$s.Public_Key}}</ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="extra content">
-                        <a href="/profiles/connect/" class="ui large basic black fluid button">Disconnect device</a>
-                    </div>
-                </div>
+        <div class="ui one stackable cards">
+          {{range $n, $s := $.Statuses}}
+              <div class="show-profile card">
+                  <div class="content">
+                      <div class="header">
+                          {{$s.Type}}
+                      </div>
+                  </div>
+                  <div class="extra lcontent">
+                      <div class="ui large list">
+                          <div class="item">
+                              <div class="content">
+                                  <div class="header">
+                                    State: {{$s.State}}
+                                    <br>
+                                    PublicKey: {{$s.Public_Key}}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
           {{end}}
-      </div>
+        </div>
       {{end}}
     </div>
 </div>
