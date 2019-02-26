@@ -6,14 +6,14 @@
         Status
     </div>
     <div class="ui hidden divider"></div>
-      {{if $.Status}}
+      {{if $.Statuses}}
       <div class="ui two stackable cards">
-        <!-- {{range $n, $s := $.Status}} -->
+        {{range $n, $s := $.Statuses}}
                 <div class="show-profile card">
                     <a href="/profiles/delete/" class="ui right corner label "><i class="trash alternate icon"></i></a>
                     <div class="content">
                         <div class="header">
-                            <i class="icon"></i>{{$.Status.Type}}
+                            <i class="icon"></i>{{$s.Type}}
                         </div>
                     </div>
                     <div class="extra lcontent">
@@ -22,9 +22,8 @@
                                 <i class="calendar icon"></i>
                                 <div class="content">
                                     <div class="header">
-                                      <!-- <ul>{{$.Status.Allowed}}</ul> -->
-                                      <ul>{{$.Status.Port}}</ul>
-                                      <ul>{{$.Status.State}}</ul>
+                                      <ul>State: {{$s.State}}</ul>
+                                      <ul>PublicKey: {{$s.Public_Key}}</ul>
                                     </div>
                                 </div>
                             </div>
@@ -34,7 +33,7 @@
                         <a href="/profiles/connect/" class="ui large basic black fluid button">Disconnect device</a>
                     </div>
                 </div>
-          <!-- {{end}} -->
+          {{end}}
       </div>
       {{end}}
     </div>

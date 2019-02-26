@@ -43,8 +43,8 @@ type Web struct {
 	Profile  Profile
 	Profiles []Profile
 
-	Status   Status
-	Statuses []Status
+	Data     Data
+	Statuses []Data
 
 	DynDNS DynDNS
 }

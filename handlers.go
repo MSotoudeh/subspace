@@ -372,43 +372,43 @@ func statusHandler(w *Web) {
 	split_line := strings.Split(wg_dump_str, "\n")
 
 	var split_tab []string
-	var Serverdata = make(map[string]string)
-	var Peerdata = make(map[string]string)
 	var ok bool
+	var Datas []Data
 
 	for i := 0; i < (len(split_line) - 1); i++ {
-		fmt.Printf("\n")
 		split_tab = strings.Split(split_line[i], "\t")
-
 		if len(split_tab) < 9 && ok != true {
+
 			for j := 0; j < 1; j++ {
 				if ok != true {
-					Serverdata["Type"] = "Server"
-					Serverdata["Interface"] = split_tab[0]
-					Serverdata["Public_Key"] = split_tab[1]
-					Serverdata["Private_Key"] = split_tab[2]
-					Serverdata["Port"] = split_tab[3]
-					Serverdata["State"] = split_tab[4]
+					Datas = []Data{
+						Data{
+							Type:        "Server",
+							Interface:   split_tab[0],
+							Public_Key:  split_tab[1],
+							Private_Key: split_tab[2],
+							Port:        split_tab[3],
+							State:       split_tab[4],
+						},
+					}
 				}
 				ok = true
-				fmt.Println(Serverdata)
 			}
 		}
 		if len(split_tab) == 9 {
-			for j := 0; j < len(split_tab); j++ {
-				Peerdata["Type"] = "Peer"
-				Peerdata["Interface"] = split_tab[0]
-				Peerdata["Public_Key"] = split_tab[1]
-				Peerdata["Allowed"] = split_tab[4]
-				Peerdata["State"] = split_tab[8]
-			}
-			fmt.Println(Peerdata)
+			Dataz :=
+				Data{
+					Type:       "Peer",
+					Interface:  split_tab[0],
+					Public_Key: split_tab[1],
+					Allowed:    split_tab[4],
+					State:      split_tab[8],
+				}
+
+			Datas = append(Datas, Dataz)
 		}
 	}
-	w.Status.Type = Peerdata["Type"]
-	w.Status.Allowed = Peerdata["Allowed"]
-	w.Status.Port = Peerdata["Port"]
-	w.Status.State = Peerdata["State"]
+	w.Statuses = Datas
 	w.HTML()
 }
 

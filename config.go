@@ -25,12 +25,14 @@ type Profile struct {
 	Created  time.Time `json:"created"`
 }
 
-type Status struct {
-	Name    string
-	Port    string
-	State   string
-	Type    string
-	Allowed string
+type Data struct {
+	Type        string
+	Interface   string
+	Public_Key  string
+	Allowed     string
+	State       string
+	Private_Key string
+	Port        string
 }
 
 type DynDNS struct {
