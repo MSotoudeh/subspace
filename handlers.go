@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	//"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -400,6 +401,30 @@ func ByteFormat(inputNum float64, precision int) string {
 	}
 
 	return strconv.FormatFloat(returnVal, 'f', precision, 64) + unit
+}
+
+func TimeFormat(inputNum float64) string {
+	var unit string
+	var returnVal float64
+	//var now = time.Now()
+
+	if inputNum >= 1000000000000 {
+		returnVal = RoundUp((inputNum / 1099511627776), 0)
+		unit = " Seconds ago" // terrabyte
+	} else if inputNum >= 1000000000 {
+		returnVal = RoundUp((inputNum / 1073741824), 0)
+		unit = " Seconds ago" // gigabyte
+	} else if inputNum >= 1000000 {
+		returnVal = RoundUp((inputNum / 1048576), 0)
+		unit = " Seconds ago" // megabyte
+	} else if inputNum >= 1000 {
+		returnVal = RoundUp((inputNum / 1024), 0)
+		unit = " Seconds ago" // kilobyte
+	} else {
+		returnVal = inputNum
+		unit = " Seconds ago" // byte
+	}
+	return strconv.FormatFloat(returnVal, 'f', 0, 64) + unit
 }
 
 // t0 := split_tab[5]
