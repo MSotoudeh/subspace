@@ -26,13 +26,16 @@ type Profile struct {
 }
 
 type Data struct {
-	Type        string
-	Interface   string
-	Public_Key  string
-	Allowed     string
-	State       string
-	Private_Key string
-	Port        string
+	Type             string
+	Name             string
+	Public_Key       string
+	Allowed          string
+	Private_Key      string
+	Port             string
+	Latest_handshake string
+	Transfer_rx      string
+	Transfer_tx      string
+	Keepalive        string
 }
 
 type DynDNS struct {

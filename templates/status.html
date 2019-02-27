@@ -9,6 +9,7 @@
       {{if $.Statuses}}
         <div class="ui one stackable cards">
           {{range $n, $s := $.Statuses}}
+              {{if eq $s.Type "Server"}}
               <div class="show-profile card">
                   <div class="content">
                       <div class="header">
@@ -20,15 +21,71 @@
                           <div class="item">
                               <div class="content">
                                   <div class="header">
-                                    State: {{$s.State}}
-                                    <br>
-                                    PublicKey: {{$s.Public_Key}}
+                                    <table>
+                                      <tr>
+                                        <td width="100">Name:</td>
+                                        <td>{{$s.Name}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Port:</td>
+                                        <td>{{$s.Port}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Public Key:</td>
+                                        <td>{{$s.Public_Key}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Keepalive:</td>
+                                        <td>{{$s.Keepalive}}</td>
+                                      </tr>
+                                    </table>
                                   </div>
                               </div>
                           </div>
                       </div>
                   </div>
               </div>
+              {{else}}
+              <div class="show-profile card">
+                  <div class="content">
+                      <div class="header">
+                          {{$s.Type}}
+                      </div>
+                  </div>
+                  <div class="extra lcontent">
+                      <div class="ui large list">
+                          <div class="item">
+                              <div class="content">
+                                  <div class="header">
+                                    <table>
+                                      <tr>
+                                        <td width="150">Latest handshake:</td>
+                                        <td>{{$s.Latest_handshake}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Received:</td>
+                                        <td>{{$s.Transfer_rx}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Sent:</td>
+                                        <td>{{$s.Transfer_tx}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Public Key:</td>
+                                        <td>{{$s.Public_Key}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Allowed IPs:</td>
+                                        <td>{{$s.Allowed}}</td>
+                                      </tr>
+                                    </table>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              {{end}}
           {{end}}
         </div>
       {{end}}

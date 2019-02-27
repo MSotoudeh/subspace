@@ -371,6 +371,12 @@ func statusHandler(w *Web) {
 	wg_dump_str := string(wg_dump)
 	split_line := strings.Split(wg_dump_str, "\n")
 
+	// profile, err := config.FindProfile(w.ps.ByName("profile"))
+	// if err != nil {
+	// 	fmt.Printf("error is %s\n", err)
+	// 	return
+	// }
+
 	var split_tab []string
 	var ok bool
 	var Datas []Data
@@ -384,11 +390,11 @@ func statusHandler(w *Web) {
 					Datas = []Data{
 						Data{
 							Type:        "Server",
-							Interface:   split_tab[0],
+							Name:        split_tab[0],
 							Public_Key:  split_tab[1],
 							Private_Key: split_tab[2],
 							Port:        split_tab[3],
-							State:       split_tab[4],
+							Keepalive:   split_tab[4],
 						},
 					}
 				}
@@ -398,13 +404,15 @@ func statusHandler(w *Web) {
 		if len(split_tab) == 9 {
 			Dataz :=
 				Data{
-					Type:       "Peer",
-					Interface:  split_tab[0],
-					Public_Key: split_tab[1],
-					Allowed:    split_tab[4],
-					State:      split_tab[8],
+					Type:             "Peer",
+					Name:             split_tab[0],
+					Public_Key:       split_tab[1],
+					Allowed:          split_tab[4],
+					Latest_handshake: split_tab[5],
+					Transfer_rx:      split_tab[6],
+					Transfer_tx:      split_tab[7],
+					Keepalive:        split_tab[8],
 				}
-
 			Datas = append(Datas, Dataz)
 		}
 	}
