@@ -517,6 +517,7 @@ func statusHandler(w *Web) {
 					Type:             "Peer",
 					Name:             split_tab[0],
 					Public_Key:       split_tab[1],
+					ClientEndpoint:   split_tab[3],
 					Allowed:          split_tab[4],
 					Latest_handshake: HandshakeStatus,
 					Transfer_rx:      ByteFormat(rx, 2),

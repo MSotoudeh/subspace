@@ -36,6 +36,7 @@ type Data struct {
 	Transfer_rx      string
 	Transfer_tx      string
 	Keepalive        string
+	ClientEndpoint   string
 }
 
 type DynDNS struct {
