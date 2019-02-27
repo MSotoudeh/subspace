@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	//"time"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -403,58 +403,52 @@ func ByteFormat(inputNum float64, precision int) string {
 	return strconv.FormatFloat(returnVal, 'f', precision, 64) + unit
 }
 
-func TimeFormat(inputNum float64) string {
-	var unit string
-	var returnVal float64
-	//var now = time.Now()
-
-	if inputNum >= 1000000000000 {
-		returnVal = RoundUp((inputNum / 1099511627776), 0)
-		unit = " Seconds ago" // terrabyte
-	} else if inputNum >= 1000000000 {
-		returnVal = RoundUp((inputNum / 1073741824), 0)
-		unit = " Seconds ago" // gigabyte
-	} else if inputNum >= 1000000 {
-		returnVal = RoundUp((inputNum / 1048576), 0)
-		unit = " Seconds ago" // megabyte
-	} else if inputNum >= 1000 {
-		returnVal = RoundUp((inputNum / 1024), 0)
-		unit = " Seconds ago" // kilobyte
-	} else {
-		returnVal = inputNum
-		unit = " Seconds ago" // byte
+func TimeDiff(a, b time.Time) (year, month, day, hour, min, sec int) {
+	if a.Location() != b.Location() {
+		b = b.In(a.Location())
 	}
-	return strconv.FormatFloat(returnVal, 'f', 0, 64) + unit
+	if a.After(b) {
+		a, b = b, a
+	}
+	y1, M1, d1 := a.Date()
+	y2, M2, d2 := b.Date()
+
+	h1, m1, s1 := a.Clock()
+	h2, m2, s2 := b.Clock()
+
+	year = int(y2 - y1)
+	month = int(M2 - M1)
+	day = int(d2 - d1)
+	hour = int(h2 - h1)
+	min = int(m2 - m1)
+	sec = int(s2 - s1)
+
+	// Normalize negative values
+	if sec < 0 {
+		sec += 60
+		min--
+	}
+	if min < 0 {
+		min += 60
+		hour--
+	}
+	if hour < 0 {
+		hour += 24
+		day--
+	}
+	if day < 0 {
+		// days in month:
+		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
+		day += 32 - t.Day()
+		month--
+	}
+	if month < 0 {
+		month += 12
+		year--
+	}
+
+	return
 }
-
-// t0 := split_tab[5]
-// t1 := time.Now()
-//
-// // Get duration.
-// d := t1.Sub(t0)
-// // Get seconds from duration.
-// s := d.Seconds()
-// m := d.Minutes()
-
-// func TimeFormat(inputNum float64, precision int) string {
-// 	  if (timestamp < 1) {
-// 	    return '<%:Never%>';
-// 	  }
-// 	  var now = new Date();
-// 	  var seconds = (now.getTime() / 1000) - timestamp;
-// 	  var ago = "";
-// 	  if (seconds < 60) {
-// 	    ago = parseInt(seconds) + '<%:s ago%>';
-// 	  } else if (seconds < 3600) {
-// 	    ago = parseInt(seconds / 60) + '<%:m ago%>';
-// 	  } else if (seconds < 86401) {
-// 	    ago = parseInt(seconds / 3600) + '<%:h ago%>';
-// 	  } else {
-// 	    ago = '<%:over a day ago%>';
-// 	  }
-// 	  var t = new Date(timestamp * 1000);
-// 	  return t.toUTCString() + ' (' + ago + ')';
-// }
 
 func statusHandler(w *Web) {
 	wg_dump, err := exec.Command("wg", "show", "all", "dump").Output()
@@ -467,6 +461,7 @@ func statusHandler(w *Web) {
 	var split_tab []string
 	var ok bool
 	var Datas []Data
+	var HandshakeStatus string
 
 	for i := 0; i < (len(split_line) - 1); i++ {
 		split_tab = strings.Split(split_line[i], "\t")
@@ -491,13 +486,39 @@ func statusHandler(w *Web) {
 		if len(split_tab) == 9 {
 			rx, _ := strconv.ParseFloat(strings.TrimSpace(split_tab[6]), 64)
 			tx, _ := strconv.ParseFloat(strings.TrimSpace(split_tab[7]), 64)
+			Latest_handshake_int, err := strconv.ParseInt(split_tab[5], 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			Latest_handshake_Time := time.Unix(Latest_handshake_int, 0)
+			year, month, day, hour, min, sec := TimeDiff(Latest_handshake_Time, time.Now())
+
+			if year == 0 && month != 0 {
+				HandshakeStatus = fmt.Sprintf("%d months, %d days, %d hours, %d mins and %d seconds ago\n",
+					month, day, hour, min, sec)
+			} else if year == 0 && month == 0 && day != 0 {
+				HandshakeStatus = fmt.Sprintf("%d days, %d hours, %d mins and %d seconds ago\n",
+					day, hour, min, sec)
+			} else if year == 0 && month == 0 && day == 0 && hour != 0 {
+				HandshakeStatus = fmt.Sprintf("%d hours, %d mins and %d seconds ago\n",
+					hour, min, sec)
+			} else if year == 0 && month == 0 && day == 0 && hour == 0 && min != 0 {
+				HandshakeStatus = fmt.Sprintf("%d mins and %d seconds ago\n",
+					min, sec)
+			} else if year == 0 && month == 0 && day == 0 && hour == 0 && min == 0 && sec != 0 {
+				HandshakeStatus = fmt.Sprintf("%d seconds ago\n",
+					sec)
+			} else {
+				HandshakeStatus = fmt.Sprintf("No handshake yet\n")
+			}
+
 			Dataz :=
 				Data{
 					Type:             "Peer",
 					Name:             split_tab[0],
 					Public_Key:       split_tab[1],
 					Allowed:          split_tab[4],
-					Latest_handshake: split_tab[5],
+					Latest_handshake: HandshakeStatus,
 					Transfer_rx:      ByteFormat(rx, 2),
 					Transfer_tx:      ByteFormat(tx, 2),
 					Keepalive:        split_tab[8],
