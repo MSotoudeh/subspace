@@ -473,10 +473,9 @@ func statusHandler(w *Web) {
 						Data{
 							Type:        "Server",
 							Name:        split_tab[0],
-							Public_Key:  split_tab[1],
-							Private_Key: split_tab[2],
+							Private_Key: split_tab[1],
+							Public_Key:  split_tab[2],
 							Port:        split_tab[3],
-							Keepalive:   split_tab[4],
 						},
 					}
 				}
@@ -517,6 +516,7 @@ func statusHandler(w *Web) {
 					Type:             "Peer",
 					Name:             split_tab[0],
 					Public_Key:       split_tab[1],
+					Preshared_Key:    split_tab[2],
 					ClientEndpoint:   split_tab[3],
 					Allowed:          split_tab[4],
 					Latest_handshake: HandshakeStatus,
