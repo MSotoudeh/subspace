@@ -35,22 +35,52 @@ else
     echo ""
 fi
 
-cat <<WGSERVER >/etc/wireguard/server/server.conf
+cat <<WGSERVER >/etc/wireguard/server/wg0.conf
 [Interface]
 PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = 5555
+Address = 10.99.97.1/24
 
 WGSERVER
-cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
+cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/wg0.conf
 #find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
 
 if ip link show wg0 2>/dev/null; then
     ip link del wg0
 fi
-ip link add wg0 type wireguard
-ip addr add 10.99.97.1/24 dev wg0
-wg setconf wg0 /etc/wireguard/server/server.conf
-ip link set wg0 up
+# ip link add wg0 type wireguard
+# ip addr add 10.99.97.1/24 dev wg0
+# wg setconf wg0 /etc/wireguard/server/wg0.conf
+#ip link set wg0 up
+
+# wg0 service
+if test -f /etc/systemd/system/wg0.service ; then
+    rm /etc/systemd/system/wg0.service
+fi
+
+if ! test -f /etc/systemd/system/wg0.service ; then
+    touch /etc/systemd/system/wg0.service
+    cat <<WIREGUARD_SERVICE >/etc/systemd/system/wg0.service
+[Unit]
+Description=Wireguard
+After=network-online.target nss-lookup.target
+Wants=network-online.target nss-lookup.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/wg-quick up /etc/wireguard/server/wg0.conf
+ExecStop=/usr/bin/wg-quick down /etc/wireguard/server/wg0.conf
+
+[Install]
+WantedBy=multi-user.target
+WIREGUARD_SERVICE
+    systemctl daemon-reload
+    systemctl enable wg0
+    systemctl stop wg0
+    systemctl start wg0
+    systemctl status wg0
+fi
 
 # subspace service
 if test -f /etc/systemd/system/subspace.service ; then
@@ -59,7 +89,7 @@ fi
 
 if ! test -f /etc/systemd/system/subspace.service ; then
     touch /etc/systemd/system/subspace.service
-    cat <<SSERVICE >/etc/systemd/system/subspace.service
+    cat <<SUBSPACE_SERVICE >/etc/systemd/system/subspace.service
 [Unit]
 Description=Subspace
 
@@ -68,7 +98,7 @@ ExecStart=/usr/local/bin/subspace --debug --http-host localhost
 
 [Install]
 WantedBy=multi-user.target
-SSERVICE
+SUBSPACE_SERVICE
     systemctl daemon-reload
     systemctl enable subspace
     systemctl start subspace

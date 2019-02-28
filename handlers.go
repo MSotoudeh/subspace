@@ -268,6 +268,7 @@ cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
 AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
+PersistentKeepalive = 25
 WGPEER
 
 mkdir clients/{{$.Profile.Name}}
@@ -279,7 +280,7 @@ Address = 10.99.97.{{$.Profile.Number}}/24
 PublicKey = $(cat server/server.public)
 Endpoint = {{$.Domain}}:5555
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
-PersistentKeepalive = 15
+PersistentKeepalive = 25
 WGCLIENT
 qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
@@ -534,12 +535,11 @@ func statusHandler(w *Web) {
 func dyndnsHandler(w *Web) {
 
 	Domain := config.Info.DynDNS.Domain
-	//FQDomain := Domain + ".duckdns.org"
 	Token := config.Info.DynDNS.Token
 
 	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
 	if err != nil {
-		fmt.Printf("error is %s\n", err)
+		//fmt.Printf("error is %s\n", err)
 	}
 
 	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
@@ -558,6 +558,26 @@ func dyndnsHandler(w *Web) {
 	w.DynDNS.IP = CurIP
 
 	w.HTML()
+}
+
+func InstalldyndnsServiceHandler(w *Web) {
+
+	Domain := config.Info.DynDNS.Domain
+	Token := config.Info.DynDNS.Token
+
+	// /usr/bin/crontab -l | { /bin/cat; echo "0 12 * * * /usr/bin/curl https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip="; } | /usr/bin/crontab -
+	cmd, err := exec.Command("/usr/bin/crontab", "-l", "|", "{", "/bin/cat;", "{ /bin/cat; echo \"0 12 * * * /usr/bin/curl -s https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=\"; }", "|", "/usr/bin/crontab", "-").Output()
+	cmd_str := string(cmd)
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+		w.Redirect("/dyndns?error=cannotinstall")
+	} else {
+		if cmd_str == "" {
+			w.Redirect("/dyndns?success=install_dyndns")
+		} else {
+			w.Redirect("/dyndns?error=cannotinstall")
+		}
+	}
 }
 
 func UpdatedyndnsHandler(w *Web) {
