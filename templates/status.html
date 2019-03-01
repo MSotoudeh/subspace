@@ -82,10 +82,16 @@
                                         <td>Allowed IPs:</td>
                                         <td>{{$s.Allowed}}</td>
                                       </tr>
-                                      <tr>
-                                        <td>Keepalive:</td>
-                                        <td>Every {{$s.Keepalive}} seconds</td>
-                                      </tr>
+                                      {{if eq $s.Keepalive "off"}}
+                                        <tr>
+                                          <td>Keepalive:</td>
+                                          <td>Keepalive is {{$s.Keepalive}}</td>
+                                        </tr>
+                                      {{else}}
+                                        <tr>
+                                          <td>Keepalive:</td>
+                                          <td>Every {{$s.Keepalive}} seconds</td>
+                                        </tr>
                                     </table>
                                   </div>
                               </div>
