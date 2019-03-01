@@ -50,11 +50,11 @@ printf ${WHITE}
 echo ">> "$(sysctl -w net.ipv4.ip_forward=1)
 echo ">> "$(sysctl -w net.ipv6.conf.all.forwarding=1)
 
-echo -e "${LIGHTBLUE}> Enable IPV4 forwarding rules ${NC}"
-# Enable IP forwarding
-echo ">> "$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
-echo ">> "$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
-echo ">> "$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
+# echo -e "${LIGHTBLUE}> Enable IPV4 forwarding rules ${NC}"
+# # Enable IP forwarding
+# echo ">> "$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
+# echo ">> "$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
+# echo ">> "$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
 
 echo -e "${LIGHTBLUE}> Install build tools ${NC}"
 # gcc for cgo

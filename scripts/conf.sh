@@ -35,52 +35,49 @@ else
     echo ""
 fi
 
-cat <<WGSERVER >/etc/wireguard/server/wg0.conf
+cat <<WGSERVER >/etc/wireguard/server/server.conf
 [Interface]
-Address = 10.99.97.1/24
 PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = 5555
-PreUp = iptables -t nat -A POSTROUTING -s 10.99.97.0/24  -o ens18 -j MASQUERADE;
-PostDown = iptables -t nat -D POSTROUTING -s 10.99.97.0/24  -o ens18 -j MASQUERADE;
 
 WGSERVER
-cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/wg0.conf
+cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
 #find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
 
 if ip link show wg0 2>/dev/null; then
     ip link del wg0
 fi
-# ip link add wg0 type wireguard
-# ip addr add 10.99.97.1/24 dev wg0
-# wg setconf wg0 /etc/wireguard/server/wg0.conf
-# ip link set wg0 up
+ip link add wg0 type wireguard
+ip addr add 10.99.97.1/24 dev wg0
+wg setconf wg0 /etc/wireguard/server/server.conf
+ip link set wg0 up
 
-# wg0 service
-if test -f /etc/systemd/system/wg0.service ; then
-    rm /etc/systemd/system/wg0.service
-fi
-
-if ! test -f /etc/systemd/system/wg0.service ; then
-    touch /etc/systemd/system/wg0.service
-    cat <<WIREGUARD_SERVICE >/etc/systemd/system/wg0.service
-[Unit]
-Description=Wireguard
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/bin/wg-quick up /etc/wireguard/server/wg0.conf
-ExecStop=/usr/bin/wg-quick down /etc/wireguard/server/wg0.conf
-
-[Install]
-WantedBy=multi-user.target
-WIREGUARD_SERVICE
-    systemctl daemon-reload
-    systemctl enable wg0
-    systemctl stop wg0
-    systemctl start wg0
-    systemctl status wg0
-fi
+# # wg0 service
+# if test -f /etc/systemd/system/wg0.service ; then
+#     rm /etc/systemd/system/wg0.service
+# fi
+#
+# if ! test -f /etc/systemd/system/wg0.service ; then
+#     touch /etc/systemd/system/wg0.service
+#     cat <<WIREGUARD_SERVICE >/etc/systemd/system/wg0.service
+# [Unit]
+# Description=Wireguard
+#
+# [Service]
+# Type=oneshot
+# RemainAfterExit=yes
+# ExecStart=/usr/bin/wg-quick up /etc/wireguard/server/wg0.conf
+# ExecStop=/usr/bin/wg-quick down /etc/wireguard/server/wg0.conf
+#
+# [Install]
+# WantedBy=multi-user.target
+# WIREGUARD_SERVICE
+#     systemctl daemon-reload
+#     systemctl enable wg0
+#     systemctl stop wg0
+#     systemctl start wg0
+#     systemctl status wg0
+# fi
 
 # subspace service
 if test -f /etc/systemd/system/subspace.service ; then
