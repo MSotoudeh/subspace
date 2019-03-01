@@ -37,8 +37,11 @@ fi
 
 cat <<WGSERVER >/etc/wireguard/server/wg0.conf
 [Interface]
+Address = 10.99.97.1/24
 PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = 5555
+PreUp = iptables -t nat -A POSTROUTING -s 10.99.97.0/24  -o ens18 -j MASQUERADE;
+PostDown = iptables -t nat -D POSTROUTING -s 10.99.97.0/24  -o ens18 -j MASQUERADE;
 
 WGSERVER
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/wg0.conf
