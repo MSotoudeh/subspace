@@ -261,7 +261,7 @@ cd /etc/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} allowed-ips 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
+wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
