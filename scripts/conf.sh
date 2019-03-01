@@ -39,7 +39,6 @@ cat <<WGSERVER >/etc/wireguard/server/wg0.conf
 [Interface]
 PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = 5555
-Address = 10.99.97.1/24
 
 WGSERVER
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/wg0.conf
@@ -51,7 +50,7 @@ fi
 # ip link add wg0 type wireguard
 # ip addr add 10.99.97.1/24 dev wg0
 # wg setconf wg0 /etc/wireguard/server/wg0.conf
-#ip link set wg0 up
+# ip link set wg0 up
 
 # wg0 service
 if test -f /etc/systemd/system/wg0.service ; then
@@ -63,8 +62,6 @@ if ! test -f /etc/systemd/system/wg0.service ; then
     cat <<WIREGUARD_SERVICE >/etc/systemd/system/wg0.service
 [Unit]
 Description=Wireguard
-After=network-online.target nss-lookup.target
-Wants=network-online.target nss-lookup.target
 
 [Service]
 Type=oneshot
