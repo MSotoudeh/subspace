@@ -7,6 +7,9 @@
               {{if eq $success "update_dyndns"}}
                   OK! DynDNS updated successfully.
                   New IP is: {{$.DynDNS.IP}}
+              {{else if eq $success "install_dyndns"}}
+                  OK! DynDNS will be updated every 6 hours.
+                  Log can be found at: /tmp/dyndns.log
               {{end}}
           </div>
           <a class="close-link" href="/"><i class="close icon"></i></a>
@@ -49,6 +52,8 @@
                                 <ul>DuckDNS Token: {{$.DynDNS.Token}}</ul>
                                 <ul>Current IP: {{$.DynDNS.IP}}</ul>
                                 <ul>DynDNS IP: {{$.DynDNS.DynIP}}</ul>
+                                <ul>Command to install as a service to run every 6 hours:</ul>
+                                <ul>echo $(/usr/bin/crontab -l | { /bin/cat; echo "0 6 * * * /usr/bin/curl -s https://www.duckdns.org/update?domains={{$.DynDNS.Domain}}&token={{$.DynDNS.Token}}&ip="; } | /usr/bin/crontab - )</ul>
                               </div>
                           </div>
                       </div>
