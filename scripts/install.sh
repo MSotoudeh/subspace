@@ -13,6 +13,9 @@ WHITE='\e[38;5;255m'
 BLACK='\033[5;232m'
 NC='\033[0m' # No Color
 
+# Check if user is root or sudo
+if ! [ $(id -u) = 0 ]; then echo -e "Please run this script as sudo or root"; exit 1 ; fi
+
 interactive=""
 
 while [ "$1" != "" ] || [ "$2" != "" ]; do
@@ -30,9 +33,9 @@ while [ "$1" != "" ] || [ "$2" != "" ]; do
             ;;
     esac
     case $1 in
-        -d | --domain )
+        -h | --host )
             shift
-            domain="$1"
+            host="$1"
             interactive="yes"
             ;;
     esac
@@ -44,9 +47,9 @@ while [ "$1" != "" ] || [ "$2" != "" ]; do
             ;;
     esac
     case $2 in
-        -d | --domain )
+        -h | --host )
             shift
-            domain="$2"
+            host="$2"
             interactive="yes"
             ;;
     esac
@@ -61,9 +64,9 @@ fi
 
 if test "$interactive" == 'yes'
 then
-    if test "$domain" == '' || test "$port" == ''
+    if test "$host" == '' || test "$port" == ''
     then
-      echo -e "${RED}Please specify domain and port with -d and -p ${NC}"
+      echo -e "${RED}Please specify host and port with -h and -p ${NC}"
       exit 0
     fi
 fi
@@ -203,15 +206,6 @@ client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | c
 server_port_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" ")
 service_host_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "http" | cut -f1 -d" ")
 
-# Colors to use for output
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-ORANGE='\033[1;166;4m'
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-LIGHTBLUE='\033[1;36m'
-NC='\033[0m' # No Color
-
 echo ""
 echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
 echo ""
@@ -270,20 +264,6 @@ echo -e "${GREEN}> Changed Client Port2 from "$client_port" to "$port" $PWD/hand
 echo ""
 
 #sudo bash "scripts/conf.sh"
-
-#!/bin/bash
-#
-# Colors to use for output
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-ORANGE='\033[1;166;4m'
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-LIGHTBLUE='\033[1;36m'
-NC='\033[0m' # No Color
-
-# Check if user is root or sudo
-if ! [ $(id -u) = 0 ]; then echo -e "Please run this script as sudo or root"; exit 1 ; fi
 
 # WireGuard (10.99.97.0/24)
 #
