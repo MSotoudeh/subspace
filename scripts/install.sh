@@ -195,20 +195,20 @@ chmod +x /bin/ /usr/local/bin/subspace
 
 # set vars
 client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
-server_port=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$')
-service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http" | grep -oE '[^ ]+$')
+server_port=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$' | tail -n1)
+service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | grep -oE '[^ ]+$' | tail -n1)
 
 client_port_lines=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ')
 client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f1 -d' '))
 client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f2 -d' '))
 #client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" ")
 #client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" " | cut -f2- -d" ")
-server_port_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" ")
-service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http" | cut -f1 -d" ")
+server_port_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" " | tail -n1)
+service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | cut -f1 -d" " | tail -n1)
 
 echo ""
 echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
-echo ""
+#echo ""
 while [[ "$host" = "" ]]; do
 	echo -e "${YELLOW}> Which new host? (\"keep\" or leave empty to keep actual)${NC}"
 	read host
@@ -221,9 +221,9 @@ while [[ "$host" = "" ]]; do
 done
 #SUBSPACE_HTTP_HOST=$host
 
-echo ""
-echo -e "${LIGHTBLUE}> Actual port is: ${NC}"${YELLOW}$server_port${NC}
-echo ""
+#echo ""
+echo -e "${LIGHTBLUE}> Actual port is: ${NC}"${YELLOW}$client_port${NC}
+#echo ""
 while [[ "$port" = "" ]]; do
 	echo -e "${YELLOW}> Which new port? (\"keep\" or leave empty to keep actual)${NC}"
 	read port
@@ -238,30 +238,47 @@ done
 #echo "New Host: "$host
 #echo "New Port: "$port
 #echo "Old Host: "$service_host
-#echo "Old Server port: "$server_port
+#echo "Old Server port: "$client_port
 #echo "Old Client port: "$client_port
 
 #echo ""
 #echo "Change: "$service_host" to "$host
-#echo "Change: "$server_port" to "$port
+#echo "Change: "$client_port" to "$port
 #echo "Change: "$client_port" to "$port
 
-#echo "sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/conf.sh"
-#echo "sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/conf.sh"
+#echo "sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh"
+#echo "sed -i "${server_port_line}s/${client_port}/${port}/g" $PWD/scripts/install.sh"
 #echo "sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go"
 #echo "sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go"
 
-sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh
-sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/install.sh
-sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
-sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go
+#sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh
+#sed -i "${server_port_line}s/${client_port}/${port}/g" $PWD/scripts/install.sh
+#sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
+#sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go
 
+
+if [ $service_host == $host ] && [ $client_port == $port ]
+then
 echo ""
-echo -e "${GREEN}> Changed Host from "$service_host" to "$host" in $PWD/scripts/conf.sh on line: "$service_host_line${NC}
-echo -e "${GREEN}> Changed Server Port from "$server_port" to "$port" in $PWD/scripts/conf.sh on line: "$server_port_line${NC}
-echo -e "${GREEN}> Changed Client Port1 from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line1${NC}
-echo -e "${GREEN}> Changed Client Port2 from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line2${NC}
+echo -e "${YELLOW}> Identical host and port! Nothing to change!"${NC}
 echo ""
+elif [ $service_host != $host ] || [ $client_port != $port ]
+then
+sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh
+sed -i "${server_port_line}s/${client_port}/${port}/g" $PWD/scripts/install.sh
+sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
+echo ""
+echo -e "${GREEN}> Changed Host from "$service_host" to "$host" in $PWD/scripts/install.sh on line: "$service_host_line${NC}
+echo -e "${GREEN}> Changed Server Port from "$client_port" to "$port" in $PWD/scripts/install.sh on line: "$server_port_line${NC}
+echo -e "${GREEN}> Changed Client Port from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line1${NC}
+echo ""
+fi
+
+#echo ""
+#echo -e "${GREEN}> Changed Host from "$service_host" to "$host" in $PWD/scripts/install.sh on line: "$service_host_line${NC}
+#echo -e "${GREEN}> Changed Server Port from "$client_port" to "$port" in $PWD/scripts/install.sh on line: "$server_port_line${NC}
+#echo -e "${GREEN}> Changed Client Port from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line1${NC}
+#echo ""
 
 #sudo bash "scripts/conf.sh"
 
@@ -271,6 +288,9 @@ echo ""
 # folder each: server, clients, peers, config
 #
 if ! test -f /etc/wireguard/server/server.private ; then
+    echo -e "${YELLOW}> Creating Server!${NC}"
+    echo ""
+
     mkdir /etc/wireguard
     cd /etc/wireguard
 
@@ -291,7 +311,7 @@ fi
 cat <<WGSERVER >/etc/wireguard/server/server.conf
 [Interface]
 PrivateKey = $(cat /etc/wireguard/server/server.private)
-ListenPort = 5555
+ListenPort = $port
 
 WGSERVER
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
