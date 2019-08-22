@@ -13,6 +13,61 @@ WHITE='\e[38;5;255m'
 BLACK='\033[5;232m'
 NC='\033[0m' # No Color
 
+interactive=""
+
+while [ "$1" != "" ] || [ "$2" != "" ]; do
+    case $1 in
+        -i | --interactive )
+            shift
+            interactive="yes"
+            ;;
+    esac
+    case $1 in
+        -p | --port )
+            shift
+            port="$1"
+            interactive="yes"
+            ;;
+    esac
+    case $1 in
+        -d | --domain )
+            shift
+            domain="$1"
+            interactive="yes"
+            ;;
+    esac
+    case $2 in
+        -p | --port )
+            shift
+            port="$2"
+            interactive="yes"
+            ;;
+    esac
+    case $2 in
+        -d | --domain )
+            shift
+            domain="$2"
+            interactive="yes"
+            ;;
+    esac
+    shift
+done
+
+if test "$interactive" != 'yes'
+then
+    echo -e "${RED}For interactive mode please use -i, or use -h | --help${NC}"
+    exit 0
+fi
+
+if test "$interactive" == 'yes'
+then
+    if test "$domain" == '' || test "$port" == ''
+    then
+      echo -e "${RED}Please specify domain and port with -d and -p ${NC}"
+      exit 0
+    fi
+fi
+
 echo -e "${LIGHTBLUE}> Stopping service ${NC}"
 systemctl stop subspace
 GIT_DIR=$(pwd)
@@ -98,7 +153,8 @@ go get -v \
     golang.org/x/time/rate \
     golang.org/x/crypto/bcrypt \
     go.uber.org/zap \
-    gopkg.in/gomail.v2
+    gopkg.in/gomail.v2 \
+    github.com/jasonlvhit/gocron
 
 GODEBUG="netdns=go http2server=0"
 
@@ -131,4 +187,190 @@ rm /usr/local/bin/subspace
 cp bin/subspace-linux-amd64 /usr/local/bin/subspace
 
 chmod +x /bin/ /usr/local/bin/subspace
-sudo bash "scripts/sed.sh"
+
+#sudo bash "scripts/sed.sh"
+
+# set vars
+client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
+server_port=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$')
+service_host=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "http" | grep -oE '[^ ]+$')
+
+client_port_lines=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ')
+client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f1 -d' '))
+client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f2 -d' '))
+#client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" ")
+#client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" " | cut -f2- -d" ")
+server_port_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" ")
+service_host_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "http" | cut -f1 -d" ")
+
+# Colors to use for output
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+ORANGE='\033[1;166;4m'
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+LIGHTBLUE='\033[1;36m'
+NC='\033[0m' # No Color
+
+echo ""
+echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
+echo ""
+while [[ "$host" = "" ]]; do
+	echo -e "${YELLOW}> Which new host? (\"keep\" or leave empty to keep actual)${NC}"
+	read host
+	if [[ "$host" = "keep" || "$host" = "" ]]; then
+		echo -e "${GREEN}> Keeping old host: "${YELLOW}$service_host${NC}
+		host=$service_host
+	else
+		echo -e "${YELLOW}> Change: "$service_host" to "$host${NC}
+	fi
+done
+#SUBSPACE_HTTP_HOST=$host
+
+echo ""
+echo -e "${LIGHTBLUE}> Actual port is: ${NC}"${YELLOW}$server_port${NC}
+echo ""
+while [[ "$port" = "" ]]; do
+	echo -e "${YELLOW}> Which new port? (\"keep\" or leave empty to keep actual)${NC}"
+	read port
+	if [[ "$port" = "keep" || "$port" = "" ]]; then
+        	echo -e "${GREEN}> Keeping old port: "${YELLOW}$server_port${NC}
+        	port=$server_port
+	else
+		echo -e "${YELLOW}> Change: "$server_port" to "$port${NC}
+	fi
+done
+
+#echo "New Host: "$host
+#echo "New Port: "$port
+#echo "Old Host: "$service_host
+#echo "Old Server port: "$server_port
+#echo "Old Client port: "$client_port
+
+#echo ""
+#echo "Change: "$service_host" to "$host
+#echo "Change: "$server_port" to "$port
+#echo "Change: "$client_port" to "$port
+
+#echo "sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/conf.sh"
+#echo "sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/conf.sh"
+#echo "sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go"
+#echo "sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go"
+
+sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/conf.sh
+sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/conf.sh
+sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
+sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go
+
+echo ""
+echo -e "${GREEN}> Changed Host from "$service_host" to "$host" in $PWD/scripts/conf.sh on line: "$service_host_line${NC}
+echo -e "${GREEN}> Changed Server Port from "$server_port" to "$port" in $PWD/scripts/conf.sh on line: "$server_port_line${NC}
+echo -e "${GREEN}> Changed Client Port1 from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line1${NC}
+echo -e "${GREEN}> Changed Client Port2 from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line2${NC}
+echo ""
+
+#sudo bash "scripts/conf.sh"
+
+#!/bin/bash
+#
+# Colors to use for output
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+ORANGE='\033[1;166;4m'
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+LIGHTBLUE='\033[1;36m'
+NC='\033[0m' # No Color
+
+# Check if user is root or sudo
+if ! [ $(id -u) = 0 ]; then echo -e "Please run this script as sudo or root"; exit 1 ; fi
+
+# WireGuard (10.99.97.0/24)
+#
+# /etc/wireguard
+# folder each: server, clients, peers, config
+#
+if ! test -f /etc/wireguard/server/server.private ; then
+    mkdir /etc/wireguard
+    cd /etc/wireguard
+
+    mkdir clients
+    touch clients/null.conf # So you can cat *.conf safely
+    mkdir peers
+    touch peers/null.conf # So you can cat *.conf safely
+    mkdir server
+    mkdir config
+
+    # Generate public/private server keys.
+    wg genkey | tee server/server.private | wg pubkey > server/server.public
+else
+    echo -e "${YELLOW}> Server already exists!${NC}"
+    echo ""
+fi
+
+cat <<WGSERVER >/etc/wireguard/server/server.conf
+[Interface]
+PrivateKey = $(cat /etc/wireguard/server/server.private)
+ListenPort = 5555
+
+WGSERVER
+cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
+#find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
+
+if ip link show wg0 2>/dev/null; then
+    ip link del wg0
+fi
+ip link add wg0 type wireguard
+ip addr add 10.99.97.1/24 dev wg0
+wg setconf wg0 /etc/wireguard/server/server.conf
+ip link set wg0 up
+
+# # wg0 service
+# if test -f /etc/systemd/system/wg0.service ; then
+#     rm /etc/systemd/system/wg0.service
+# fi
+#
+# if ! test -f /etc/systemd/system/wg0.service ; then
+#     touch /etc/systemd/system/wg0.service
+#     cat <<WIREGUARD_SERVICE >/etc/systemd/system/wg0.service
+# [Unit]
+# Description=Wireguard
+#
+# [Service]
+# Type=oneshot
+# RemainAfterExit=yes
+# ExecStart=/usr/bin/wg-quick up /etc/wireguard/server/wg0.conf
+# ExecStop=/usr/bin/wg-quick down /etc/wireguard/server/wg0.conf
+#
+# [Install]
+# WantedBy=multi-user.target
+# WIREGUARD_SERVICE
+#     systemctl daemon-reload
+#     systemctl enable wg0
+#     systemctl stop wg0
+#     systemctl start wg0
+#     systemctl status wg0
+# fi
+
+# subspace service
+if test -f /etc/systemd/system/subspace.service ; then
+    rm /etc/systemd/system/subspace.service
+fi
+
+if ! test -f /etc/systemd/system/subspace.service ; then
+    touch /etc/systemd/system/subspace.service
+    cat <<SUBSPACE_SERVICE >/etc/systemd/system/subspace.service
+[Unit]
+Description=Subspace
+
+[Service]
+ExecStart=/usr/local/bin/subspace --debug --http-host localhost
+
+[Install]
+WantedBy=multi-user.target
+SUBSPACE_SERVICE
+    systemctl daemon-reload
+    systemctl enable subspace
+    systemctl start subspace
+    systemctl status subspace
+fi
