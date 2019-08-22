@@ -164,16 +164,16 @@ GODEBUG="netdns=go http2server=0"
 echo -e "${LIGHTBLUE}> Running go-bindata ${NC}"
 if [ $ARCH == "armhf" ]
 then
-./bin/go-bindata-arm --pkg main static/... templates/... email/...
-go fmt
-go vet --all
+./bin/go-bindata-arm --pkg main static/... templates/... email/... >/dev/null 2>&1
+go fmt >/dev/null 2>&1
+go vet --all >/dev/null 2>&1
 fi
 
 if [ $ARCH == "amd64" ]
 then
-./bin/go-bindata --pkg main static/... templates/... email/...
-go fmt
-go vet --all
+./bin/go-bindata --pkg main static/... templates/... email/... >/dev/null 2>&1
+go fmt >/dev/null 2>&1
+go vet --all >/dev/null 2>&1
 fi
 
 CGO_ENABLED=0
@@ -206,7 +206,6 @@ client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | c
 server_port_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" " | tail -n1)
 service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | cut -f1 -d" " | tail -n1)
 
-echo ""
 echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
 #echo ""
 while [[ "$host" = "" ]]; do
@@ -259,19 +258,16 @@ done
 
 if [ $service_host == $host ] && [ $client_port == $port ]
 then
-echo ""
 echo -e "${YELLOW}> Identical host and port! Nothing to change!"${NC}
-echo ""
 elif [ $service_host != $host ] || [ $client_port != $port ]
 then
 sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh
 sed -i "${server_port_line}s/${client_port}/${port}/g" $PWD/scripts/install.sh
 sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
-echo ""
+
 echo -e "${GREEN}> Changed Host from "$service_host" to "$host" in $PWD/scripts/install.sh on line: "$service_host_line${NC}
 echo -e "${GREEN}> Changed Server Port from "$client_port" to "$port" in $PWD/scripts/install.sh on line: "$server_port_line${NC}
 echo -e "${GREEN}> Changed Client Port from "$client_port" to "$port" $PWD/handlers.go on line: "$client_port_line1${NC}
-echo ""
 fi
 
 #echo ""
@@ -288,8 +284,7 @@ fi
 # folder each: server, clients, peers, config
 #
 if ! test -f /etc/wireguard/server/server.private ; then
-    echo -e "${YELLOW}> Creating Server!${NC}"
-    echo ""
+    echo -e "${LIGHTBLUE}> Creating Server!${NC}"
 
     mkdir /etc/wireguard
     cd /etc/wireguard
@@ -305,7 +300,6 @@ if ! test -f /etc/wireguard/server/server.private ; then
     wg genkey | tee server/server.private | wg pubkey > server/server.public
 else
     echo -e "${YELLOW}> Server already exists!${NC}"
-    echo ""
 fi
 
 cat <<WGSERVER >/etc/wireguard/server/server.conf
@@ -317,13 +311,13 @@ WGSERVER
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
 #find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
 
-if ip link show wg0 2>/dev/null; then
-    ip link del wg0
+if ip link show wg0 >/dev/null 2>&1; then
+    ip link del wg0 >/dev/null 2>&1
 fi
-ip link add wg0 type wireguard
-ip addr add 10.99.97.1/24 dev wg0
-wg setconf wg0 /etc/wireguard/server/server.conf
-ip link set wg0 up
+ip link add wg0 type wireguard >/dev/null 2>&1
+ip addr add 10.99.97.1/24 dev wg0 >/dev/null 2>&1
+wg setconf wg0 /etc/wireguard/server/server.conf >/dev/null 2>&1
+ip link set wg0 up >/dev/null 2>&1
 
 # # wg0 service
 # if test -f /etc/systemd/system/wg0.service ; then
@@ -352,7 +346,16 @@ ip link set wg0 up
 #     systemctl status wg0
 # fi
 
+# copy wg_service start script
+echo -e "${LIGHTBLUE}> Copying scripts/wg_service.sh to /usr/local/etc/wg_service.sh${NC}"
+cp scripts/wg_service.sh /usr/local/etc/wg_service.sh
+
+# chmod +x it
+echo -e "${LIGHTBLUE}> chmod +x on /usr/local/etc/wg_service.sh${NC}"
+chmod +x /usr/local/etc/wg_service.sh
+
 # subspace service
+echo -e "${LIGHTBLUE}> Creating Service /etc/systemd/system/subspace.service${NC}"
 if test -f /etc/systemd/system/subspace.service ; then
     rm /etc/systemd/system/subspace.service
 fi
@@ -364,13 +367,16 @@ if ! test -f /etc/systemd/system/subspace.service ; then
 Description=Subspace
 
 [Service]
+ExecStartPre=/usr/local/etc/wg_service.sh
 ExecStart=/usr/local/bin/subspace --debug --http-host localhost
 
 [Install]
 WantedBy=multi-user.target
 SUBSPACE_SERVICE
+
+echo -e "${LIGHTBLUE}> Final service restart${NC}"
     systemctl daemon-reload
     systemctl enable subspace
     systemctl start subspace
-    systemctl status subspace
+    systemctl is-active --quiet subspace && echo -e "${GREEN}> Subspace is running${NC}" || echo -e "${RED}> Subspace is NOT running${NC}"
 fi
