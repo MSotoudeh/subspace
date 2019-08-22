@@ -40,28 +40,31 @@ apt install -y wireguard >/dev/null 2>&1
 
 echo -e "${LIGHTBLUE}> Load modules ${NC}"
 # Load modules.
-modprobe wireguard
-modprobe iptable_nat
-modprobe ip6table_nat
+/sbin/modprobe wireguard
+/sbin/modprobe iptable_nat
+/sbin/modprobe ip6table_nat
 
 echo -e "${LIGHTBLUE}> Enable IP forwarding ${NC}"
 # Enable IP forwarding
 printf ${WHITE}
-echo ">> "$(sysctl -w net.ipv4.ip_forward=1)
-echo ">> "$(sysctl -w net.ipv6.conf.all.forwarding=1)
+echo ">> "$(/sbin/sysctl -w net.ipv4.ip_forward=1)
+echo ">> "$(/sbin/sysctl -w net.ipv6.conf.all.forwarding=1)
+#echo ">> "$(sysctl -w net.ipv4.ip_forward=1)
+#echo ">> "$(sysctl -w net.ipv6.conf.all.forwarding=1)
 
-# echo -e "${LIGHTBLUE}> Enable IPV4 forwarding rules ${NC}"
+echo -e "${LIGHTBLUE}> Enable IPV4 firewall forwarding rules ${NC}"
 # # Enable IP forwarding
-# echo ">> "$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
-# echo ">> "$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
-# echo ">> "$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
+echo ">> NAT"$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
+echo ">> Forward 1"$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
+echo ">> Forward 2"$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
 
 echo -e "${LIGHTBLUE}> Install build tools ${NC}"
 # gcc for cgo
 apt-get install -y --no-install-recommends g++ gcc libc6-dev make pkg-config >/dev/null 2>&1
 
 # set golang version
-GOLANG_VERSION='1.11.5'
+GOLANG_VERSION='1.12.9'
+#GOLANG_VERSION='1.11.5'
 
 # install golang
 if [ ! -d "$GO_DIR" ]; then
