@@ -195,16 +195,16 @@ chmod +x /bin/ /usr/local/bin/subspace
 
 # set vars
 client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
-server_port=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$')
-service_host=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "http" | grep -oE '[^ ]+$')
+server_port=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$')
+service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http" | grep -oE '[^ ]+$')
 
 client_port_lines=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ')
 client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f1 -d' '))
 client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f2 -d' '))
 #client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" ")
 #client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" " | cut -f2- -d" ")
-server_port_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" ")
-service_host_line=$(sed = $PWD/scripts/conf.sh | sed 'N;s/\n/ /' | grep "http" | cut -f1 -d" ")
+server_port_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" ")
+service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http" | cut -f1 -d" ")
 
 echo ""
 echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
@@ -251,8 +251,8 @@ done
 #echo "sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go"
 #echo "sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go"
 
-sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/conf.sh
-sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/conf.sh
+sed -i "${service_host_line}s/${service_host}/${host}/g" $PWD/scripts/install.sh
+sed -i "${server_port_line}s/${server_port}/${port}/g" $PWD/scripts/install.sh
 sed -i "${client_port_line1}s/${client_port}/${port}/g" $PWD/handlers.go
 sed -i "${client_port_line2}s/${client_port}/${port}/g" $PWD/handlers.go
 
