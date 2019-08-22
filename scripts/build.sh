@@ -114,7 +114,8 @@ go get -v \
     golang.org/x/time/rate \
     golang.org/x/crypto/bcrypt \
     go.uber.org/zap \
-    gopkg.in/gomail.v2
+    gopkg.in/gomail.v2 \
+    github.com/jasonlvhit/gocron
 
 GODEBUG="netdns=go http2server=0"
 

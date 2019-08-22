@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jasonlvhit/gocron"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -539,7 +541,7 @@ func dyndnsHandler(w *Web) {
 
 	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
 	if err != nil {
-		//fmt.Printf("error is %s\n", err)
+		fmt.Printf("error is %s\n", err)
 	}
 
 	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
@@ -562,22 +564,61 @@ func dyndnsHandler(w *Web) {
 
 func InstalldyndnsServiceHandler(w *Web) {
 
+	gocron.Every(6).Hours().Do(UpdatedyndnsServiceHandler)
+	gocron.Start()
+
+	fmt.Printf("\nWill update every 6 hours\n")
+
+	w.Redirect("/dyndns?success=install_dyndns")
+}
+
+func UpdatedyndnsServiceHandler() {
+
 	Domain := config.Info.DynDNS.Domain
 	Token := config.Info.DynDNS.Token
 
-	// /usr/bin/crontab -l | { /bin/cat; echo "0 12 * * * /usr/bin/curl https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip="; } | /usr/bin/crontab -
-	cmd, err := exec.Command("/usr/bin/crontab", "-l", "|", "{", "/bin/cat;", "{ /bin/cat; echo \"0 12 * * * /usr/bin/curl -s https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=\"; }", "|", "/usr/bin/crontab", "-").Output()
-	cmd_str := string(cmd)
+	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
 	if err != nil {
 		fmt.Printf("error is %s\n", err)
-		w.Redirect("/dyndns?error=cannotinstall")
-	} else {
-		if cmd_str == "" {
-			w.Redirect("/dyndns?success=install_dyndns")
-		} else {
-			w.Redirect("/dyndns?error=cannotinstall")
-		}
 	}
+
+	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	domain_ip_str := string(domain_ip_cmd)
+	DynIP := domain_ip_str
+	current_ip_str := string(current_ip_cmd)
+	CurIP := current_ip_str
+	CurIPTrim := strings.TrimSuffix(CurIP, "\n")
+
+	f, err := os.OpenFile("/tmp/dyndns.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer f.Close()
+	wrt := io.MultiWriter(os.Stdout, f)
+	log.SetOutput(wrt)
+
+	update, err := exec.Command("curl", "https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=").Output()
+	if err != nil {
+		//fmt.Printf("\nCMD KO")
+		log.Printf("CMD KO")
+	}
+
+	update_str := string(update)
+
+	if update_str == "KO" {
+		//fmt.Printf("\nKO, could not update DynDNS Domain: " + Domain)
+		log.Printf("KO, could not update DynDNS Domain: " + Domain)
+	}
+
+	if update_str == "OK" {
+		//fmt.Printf("\nOK, updated DynDNS Domain " + Domain + " from " + CurIPTrim + " to " + DynIP)
+		log.Printf("OK, updated DynDNS Domain " + Domain + " from " + CurIPTrim + " to " + DynIP)
+	}
+
 }
 
 func UpdatedyndnsHandler(w *Web) {
@@ -594,10 +635,12 @@ func UpdatedyndnsHandler(w *Web) {
 
 	if update_str == "KO" {
 		w.Redirect("/dyndns?error=cannotupdate")
+		fmt.Printf("KO")
 	}
 
 	if update_str == "OK" {
 		w.Redirect("/dyndns?success=update_dyndns")
+		fmt.Printf("OK")
 	}
 
 }
