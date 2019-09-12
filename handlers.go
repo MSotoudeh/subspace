@@ -240,6 +240,22 @@ func signinHandler(w *Web) {
 func addProfileHandler(w *Web) {
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
+	//publickey := strings.TrimSpace(w.r.FormValue("platform"))
+	//const wgchild = child_process.spawn("wg", ["pubkey"]);
+
+	// privatekey_raw, err := exec.Command("wg_private_key=\"$(wg genkey)\"").Output()
+	// if err != nil {
+	// 	fmt.Printf("error is %s\n", err)
+	// }
+	publickey_raw, err := exec.Command("wg genkey | wg pubkey").Output()
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
+
+	// privatekey_str := string(privatekey_raw)
+	publickey_str := string(publickey_raw)
+
+	publickey := string(publickey_str)
 
 	if platform == "" {
 		platform = "other"
@@ -250,7 +266,7 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
-	profile, err := config.AddProfile(name, platform)
+	profile, err := config.AddProfile(publickey, name, platform)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
@@ -288,7 +304,7 @@ Endpoint = {{$.Domain}}:1234
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
 WGCLIENT
-qrencode -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 	_, err = bash(script, struct {
 		Profile Profile
@@ -545,7 +561,9 @@ func statusHandler(w *Web) {
 			Datas = append(Datas, Dataz)
 		}
 	}
+	profiles := config.ListProfiles()
 	w.Statuses = Datas
+	w.Profiles = profiles
 	w.HTML()
 }
 

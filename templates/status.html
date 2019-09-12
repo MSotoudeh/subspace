@@ -7,7 +7,7 @@
     </div>
     <div class="ui hidden divider"></div>
       {{if $.Statuses}}
-        <div class="ui two stackable cards">
+        <div class="ui one stackable cards">
           {{range $n, $s := $.Statuses}}
               {{if eq $s.Type "Server"}}
               <div class="show-profile card">
@@ -55,6 +55,10 @@
                   <div class="content">
                       <div class="header">
                           {{$s.Type}}
+                          {{$s.Public_Key}}
+                          {{range $n, $p := $.Profiles}}
+                          {{$p.Name}}
+                          {{end}}
                           <!-- {{$s.Public_Key}} -->
                       </div>
                   </div>
