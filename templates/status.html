@@ -7,13 +7,14 @@
     </div>
     <div class="ui hidden divider"></div>
       {{if $.Statuses}}
-        <div class="ui one stackable cards">
+        <div class="ui two stackable cards">
           {{range $n, $s := $.Statuses}}
               {{if eq $s.Type "Server"}}
               <div class="show-profile card">
                   <div class="content">
                       <div class="header">
                           {{$s.Type}}
+                          <!-- {{$s.Public_Key}} -->
                       </div>
                   </div>
                   <div class="extra lcontent">
@@ -26,6 +27,10 @@
                                         <td width="100">Name:</td>
                                         <td>{{$s.Name}}</td>
                                       </tr>
+                                      <!-- <tr>
+                                        <td>Domain:</td>
+                                        <td>{{$s.Domain}}</td>
+                                      </tr>
                                       <tr>
                                         <td>Port:</td>
                                         <td>{{$s.Port}}</td>
@@ -33,6 +38,10 @@
                                       <tr>
                                         <td>Public Key:</td>
                                         <td>{{$s.Public_Key}}</td>
+                                      </tr> -->
+                                      <tr>
+                                        <td>Endpoint:</td>
+                                        <td>{{$s.Domain}}:{{$s.Port}}</td>
                                       </tr>
                                     </table>
                                   </div>
@@ -46,6 +55,7 @@
                   <div class="content">
                       <div class="header">
                           {{$s.Type}}
+                          <!-- {{$s.Public_Key}} -->
                       </div>
                   </div>
                   <div class="extra lcontent">
@@ -66,10 +76,10 @@
                                         <td>Sent:</td>
                                         <td>{{$s.Transfer_tx}}</td>
                                       </tr>
-                                      <tr>
+                                      <!-- <tr>
                                         <td>Public Key:</td>
                                         <td>{{$s.Public_Key}}</td>
-                                      </tr>
+                                      </tr> -->
                                       <tr>
                                         <td>Preshared Key:</td>
                                         <td>{{$s.Preshared_Key}}</td>
@@ -80,7 +90,8 @@
                                       </tr>
                                       <tr>
                                         <td>Allowed IPs:</td>
-                                        <td>{{$s.Allowed}}</td>
+                                        <!-- <td>{{$s.Allowed}}</td> -->
+                                        <td>{{$s.AllowedIPs}}</td> 
                                       </tr>
                                       {{if eq $s.Keepalive "off"}}
                                         <tr>

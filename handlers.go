@@ -101,6 +101,7 @@ func configureHandler(w *Web) {
 	email := strings.ToLower(strings.TrimSpace(w.r.FormValue("email")))
 	emailConfirm := strings.ToLower(strings.TrimSpace(w.r.FormValue("email_confirm")))
 	password := w.r.FormValue("password")
+	domain := httpHost
 
 	if !validEmail.MatchString(email) || !validPassword.MatchString(password) || email != emailConfirm {
 		w.Redirect("/configure?error=invalid")
@@ -115,6 +116,7 @@ func configureHandler(w *Web) {
 	config.UpdateInfo(func(i *Info) error {
 		i.Email = email
 		i.Password = hashedPassword
+		i.Domain = domain
 		i.Configured = true
 		return nil
 	})
@@ -268,6 +270,7 @@ wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
+#{{$.Profile.Name}}
 PublicKey = ${wg_public_key}
 AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
@@ -279,8 +282,9 @@ cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
+#{{$.Profile.Name}}
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:5555
+Endpoint = {{$.Domain}}:1234
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
 WGCLIENT
@@ -462,11 +466,14 @@ func statusHandler(w *Web) {
 	split_line := strings.Split(wg_dump_str, "\n")
 
 	var split_tab []string
+	var AllowedIP_split []string
 	var ok bool
 	var Datas []Data
 	var HandshakeStatus string
+	domain := config.Info.Domain
 
 	for i := 0; i < (len(split_line) - 1); i++ {
+
 		split_tab = strings.Split(split_line[i], "\t")
 		if len(split_tab) < 9 && ok != true {
 
@@ -476,6 +483,7 @@ func statusHandler(w *Web) {
 						Data{
 							Type:        "Server",
 							Name:        split_tab[0],
+							Domain:      domain,
 							Private_Key: split_tab[1],
 							Public_Key:  split_tab[2],
 							Port:        split_tab[3],
@@ -514,6 +522,12 @@ func statusHandler(w *Web) {
 				HandshakeStatus = fmt.Sprintf("No handshake yet\n")
 			}
 
+			AllowedIP_split = strings.Split(split_tab[4], ",")
+			// fmt.Println(AllowedIlP_split)
+			// for ip := 0; ip < (len(AllowedIP_split)); ip++ {
+			// 	fmt.Printf(AllowedIP_split[ip])
+			// }
+
 			Dataz :=
 				Data{
 					Type:             "Peer",
@@ -522,6 +536,7 @@ func statusHandler(w *Web) {
 					Preshared_Key:    split_tab[2],
 					ClientEndpoint:   split_tab[3],
 					Allowed:          split_tab[4],
+					AllowedIPs:       AllowedIP_split,
 					Latest_handshake: HandshakeStatus,
 					Transfer_rx:      ByteFormat(rx, 2),
 					Transfer_tx:      ByteFormat(tx, 2),
@@ -685,6 +700,48 @@ func settingsHandler(w *Web) {
 	})
 
 	w.Redirect("/?success=settings")
+}
+
+func serversettingsHandler(w *Web) {
+	if w.r.Method == "GET" {
+		w.HTML()
+		return
+	}
+
+	ip_address := w.r.FormValue("ip_address")
+	port := w.r.FormValue("port")
+	network_adapter := w.r.FormValue("network_adapter")
+	virtual_ip_address := w.r.FormValue("virtual_ip_address")
+	cidr := w.r.FormValue("cidr")
+	dns := w.r.FormValue("dns")
+	public_key := w.r.FormValue("public_key")
+	config_path := w.r.FormValue("config_path")
+
+	int_port, err := strconv.Atoi(port)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if ip_address != "" || port != "" || network_adapter != "" || virtual_ip_address != "" || cidr != "" || dns != "" || public_key != "" || config_path != "" {
+		if err != nil {
+			w.Redirect("/serversettings?error=emptywrongtype")
+			return
+		}
+	}
+
+	config.UpdateInfo(func(i *Info) error {
+		i.Server.IP_Address = ip_address
+		i.Server.Port = int_port
+		i.Server.Network_Adapter = network_adapter
+		i.Server.Virtual_IP_Address = virtual_ip_address
+		i.Server.CIDR = cidr
+		i.Server.DNS = dns
+		i.Server.Public_Key = public_key
+		i.Server.Config_Path = config_path
+		return nil
+	})
+
+	w.Redirect("/?success=serversettings")
 }
 
 func emailsettingsHandler(w *Web) {

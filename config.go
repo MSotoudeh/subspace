@@ -28,8 +28,10 @@ type Profile struct {
 type Data struct {
 	Type             string
 	Name             string
+	Domain           string
 	Public_Key       string
 	Allowed          string
+	AllowedIPs       []string
 	Private_Key      string
 	Port             string
 	Latest_handshake string
@@ -83,6 +85,16 @@ type Info struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	} `json:"mail"`
+	Server struct {
+		IP_Address         string `json:"ip_address"`
+		Port               int    `json:"port"`
+		Network_Adapter    string `json:"network_adapter"`
+		Virtual_IP_Address string `json:"virtual_ip_address"`
+		CIDR               string `json:"cidr"`
+		DNS                string `json:"dns"`
+		Public_Key         string `json:"public_key"`
+		Config_Path        string `json:"config_path"`
+	} `json:"server"`
 	DynDNS struct {
 		Domain string `json:"domain"`
 		Token  string `json:"token"`
@@ -187,6 +199,7 @@ func (c *Config) AddProfile(name, platform string) (Profile, error) {
 			number = p.Number + 1
 		}
 	}
+
 	profile := Profile{
 		ID:       id,
 		Name:     name,

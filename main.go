@@ -175,6 +175,8 @@ func http_server(server_type string) {
 	r.GET("/forgot", Log(WebHandler(forgotHandler, "forgot")))
 	r.POST("/forgot", Log(WebHandler(forgotHandler, "forgot")))
 
+	r.GET("/serversettings", Log(WebHandler(serversettingsHandler, "serversettings")))
+	r.POST("/serversettings", Log(WebHandler(serversettingsHandler, "serversettings")))
 	r.GET("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
