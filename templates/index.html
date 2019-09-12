@@ -86,7 +86,8 @@
             </div>
             <div class="ui hidden divider"></div>
 
-            <div class="ui one stackable cards">
+            <!-- <div class="ui one stackable cards"> -->
+            <div class="ui three stackable cards">
                 {{range $n, $p := $.Profiles}}
                     <div class="show-profile card">
                         <a href="/profiles/delete/{{$p.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
@@ -120,7 +121,7 @@
                             </div>
                         </div>         
                         <div class="extra content">
-                            <div class="ui three buttons">
+                            <!-- <div class="ui three buttons">
                                 <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button"><i class="desktop icon"></i> Connect</a>
                                 <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button"><i class="save icon"></i> Download</a>
                                 <div id="qr{{$p.Number}}" class="modal">
@@ -129,7 +130,17 @@
                                     <img src="/profiles/png/wireguard/{{$p.ID}}">
                                 </div>
                                 <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button"><i class="qr code icon"></i> QR</a>
+                            </div> -->
+                            <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button"><i class="desktop icon"></i> Connect</a>
+                            <br>
+                            <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button"><i class="save icon"></i> Download</a>
+                            <br>
+                            <div id="qr{{$p.Number}}" class="modal">
+                                Here is your QR Code for {{$p.Name}}:
+                                <br>
+                                <img src="/profiles/png/wireguard/{{$p.ID}}">
                             </div>
+                            <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button"><i class="qr code icon"></i> QR</a>
                         </div>
                     </div>
                 {{end}}
