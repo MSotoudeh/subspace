@@ -55,10 +55,11 @@
                   <div class="content">
                       <div class="header">
                           {{$s.Type}}
-                          {{$s.Public_Key}}
-                          {{range $n, $p := $.Profiles}}
-                          {{$p.Name}}
-                          {{end}}
+                          <br>
+                          WG DUMP PUBKEY: {{$s.Public_Key}}
+                          <br>
+                          {{$p := $.Profiles}} 
+                          PROFILE PUBKEY: {{$p}}
                           <!-- {{$s.Public_Key}} -->
                       </div>
                   </div>

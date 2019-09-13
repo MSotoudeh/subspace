@@ -18,12 +18,13 @@ var (
 )
 
 type Profile struct {
-	ID         string    `json:"id"`
-	Public_Key string    `json:"publickey"`
-	Name       string    `json:"name"`
-	Platform   string    `json:"platform"`
-	Number     int       `json:"number"`
-	Created    time.Time `json:"created"`
+	ID          string    `json:"id"`
+	Public_Key  string    `json:"publickey"`
+	Private_Key string    `json:"privatekey"`
+	Name        string    `json:"name"`
+	Platform    string    `json:"platform"`
+	Number      int       `json:"number"`
+	Created     time.Time `json:"created"`
 }
 
 type Data struct {
@@ -182,7 +183,7 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(publickey, name, platform string) (Profile, error) {
+func (c *Config) AddProfile(privatekey, publickey, name, platform string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -202,12 +203,13 @@ func (c *Config) AddProfile(publickey, name, platform string) (Profile, error) {
 	}
 
 	profile := Profile{
-		ID:         id,
-		Public_Key: publickey,
-		Name:       name,
-		Platform:   platform,
-		Number:     number,
-		Created:    time.Now(),
+		ID:          id,
+		Public_Key:  publickey,
+		Private_Key: privatekey,
+		Name:        name,
+		Platform:    platform,
+		Number:      number,
+		Created:     time.Now(),
 	}
 	c.Profiles = append(c.Profiles, &profile)
 	return profile, c.save()

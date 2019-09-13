@@ -240,22 +240,40 @@ func signinHandler(w *Web) {
 func addProfileHandler(w *Web) {
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
-	//publickey := strings.TrimSpace(w.r.FormValue("platform"))
-	//const wgchild = child_process.spawn("wg", ["pubkey"]);
+	privatekey := strings.TrimSpace(w.r.FormValue("platform"))
+	publickey := strings.TrimSpace(w.r.FormValue("platform"))
 
-	// privatekey_raw, err := exec.Command("wg_private_key=\"$(wg genkey)\"").Output()
+	// privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key='$(wg genkey)'").Output()
 	// if err != nil {
 	// 	fmt.Printf("error is %s\n", err)
 	// }
-	publickey_raw, err := exec.Command("wg genkey | wg pubkey").Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
+	// publickey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey) && wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
+
+	//privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey)").Output()
+	//publickey_raw, err := exec.Command("bash", "-c", "wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
+	//privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey)").Output()
+	//publickey_raw, err := exec.Command("bash", "-c", "wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
+	// privatekey_raw, err := pipes.RunString("$(wg genkey)")
+	// publickey_raw, err := pipes.RunString("$pvk | wg pubkey)'")
+
+	// privatekey_raw, err := pipes.RunString("bash | wg genkey > /etc/wireguard/private.key")
+	// _ = privatekey_raw
+	// publickey_raw, err := pipes.RunString("bash | wg pubkey < /etc/wireguard/private.key > /etc/wireguard/public.key")
+	// _ = publickey_raw
+
+	// cmd, err := pipes.RunString("cd /etc/wireguard | umask 077 | wg genkey > private.key | wg pubkey < private.key > public.key")
+	// if err != nil {
+	// 	fmt.Printf("error is %s\n", err)
+	// }
 
 	// privatekey_str := string(privatekey_raw)
-	publickey_str := string(publickey_raw)
+	// privatekey := string(privatekey_str)
+	// publickey_str := string(publickey_raw)
+	// publickey := string(publickey_str)
+	// fmt.Printf(publickey_str, privatekey_str)
 
-	publickey := string(publickey_str)
+	// privatekey, err := pipes.RunString("cat /etc/wireguard/private.key >> /dev/stdout | rm /etc/wireguard/private.key")
+	// publickey, err := pipes.RunString("cat /etc/wireguard/public.key >> /dev/stdout | rm /etc/wireguard/public.key")
 
 	if platform == "" {
 		platform = "other"
@@ -266,7 +284,7 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
-	profile, err := config.AddProfile(publickey, name, platform)
+	profile, err := config.AddProfile(privatekey, publickey, name, platform)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
@@ -276,10 +294,18 @@ func addProfileHandler(w *Web) {
 	// /etc/wireguard
 	// folder each: server, clients, peers, config
 	//
+
+	// wg_private_key="$(wg genkey)"
+	// wg_public_key="$(echo $wg_private_key | wg pubkey)"
+	// PublicKey = ${wg_public_key}
+
 	script := `
 cd /etc/wireguard
 wg_private_key="$(wg genkey)"
 wg_public_key="$(echo $wg_private_key | wg pubkey)"
+
+#wg_private_key={{$.Profile.Private_Key}}
+#wg_public_key={{$.Profile.Public_Key}}
 
 wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 

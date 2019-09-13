@@ -157,6 +157,7 @@ go get -v \
     golang.org/x/crypto/bcrypt \
     go.uber.org/zap \
     gopkg.in/gomail.v2 \
+    github.com/ebuchman/go-shell-pipes \
     github.com/jasonlvhit/gocron
 
 GODEBUG="netdns=go http2server=0"
