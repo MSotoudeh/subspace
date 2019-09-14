@@ -13,6 +13,7 @@
               <div class="show-profile card">
                   <div class="content">
                       <div class="header">
+                          <i class="server icon"></i>
                           {{$s.Type}}
                           <!-- {{$s.Public_Key}} -->
                       </div>
@@ -27,18 +28,6 @@
                                         <td width="100">Name:</td>
                                         <td>{{$s.Name}}</td>
                                       </tr>
-                                      <!-- <tr>
-                                        <td>Domain:</td>
-                                        <td>{{$s.Domain}}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Port:</td>
-                                        <td>{{$s.Port}}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Public Key:</td>
-                                        <td>{{$s.Public_Key}}</td>
-                                      </tr> -->
                                       <tr>
                                         <td>Endpoint:</td>
                                         <td>{{$s.Domain}}:{{$s.Port}}</td>
@@ -50,17 +39,23 @@
                       </div>
                   </div>
               </div>
+        </div>
+        <div class="ui two stackable cards">
               {{else}}
               <div class="show-profile card">
                   <div class="content">
                       <div class="header">
+                          <!-- <i class="exchange icon"></i>
                           {{$s.Type}}
-                          <br>
-                          WG DUMP PUBKEY: {{$s.Public_Key}}
-                          <br>
-                          {{$p := $.Profiles}} 
-                          PROFILE PUBKEY: {{$p}}
-                          <!-- {{$s.Public_Key}} -->
+                          {{$s.Public_Key_Trim}}...
+                          <br> -->
+                          {{range $i, $p := $.Profiles}}
+                            {{if eq $s.Public_Key $p.Public_Key}}
+                              <i class="exchange icon"></i>
+                              Peer {{$p.Name}}
+                            {{end}}
+                            {{else}}
+                          {{end}}
                       </div>
                   </div>
                   <div class="extra lcontent">

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	pipes "github.com/ebuchman/go-shell-pipes"
 	"github.com/jasonlvhit/gocron"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -240,43 +242,54 @@ func signinHandler(w *Web) {
 func addProfileHandler(w *Web) {
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
-	privatekey := strings.TrimSpace(w.r.FormValue("platform"))
-	publickey := strings.TrimSpace(w.r.FormValue("platform"))
+	// privatekey := strings.TrimSpace(w.r.FormValue("platform"))
+	// publickey := strings.TrimSpace(w.r.FormValue("platform"))
+	routing := strings.TrimSpace(w.r.FormValue("routing"))
 
-	// privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key='$(wg genkey)'").Output()
-	// if err != nil {
-	// 	fmt.Printf("error is %s\n", err)
-	// }
-	// publickey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey) && wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
+	// command := []string{"wg", "genkey", "|", "tee", "/etc/wireguard/private.key", "|", "wg", "pubkey", ">", "/etc/wireguard/public.key"}
+	// cmd, err := pipes.RunStrings(command...)
+	// _ = cmd
 
-	//privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey)").Output()
-	//publickey_raw, err := exec.Command("bash", "-c", "wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
-	//privatekey_raw, err := exec.Command("bash", "-c", "wg_private_key=$(wg genkey)").Output()
-	//publickey_raw, err := exec.Command("bash", "-c", "wg_public_key=$(echo $wg_private_key | wg pubkey)").Output()
-	// privatekey_raw, err := pipes.RunString("$(wg genkey)")
-	// publickey_raw, err := pipes.RunString("$pvk | wg pubkey)'")
+	cmd2, err := pipes.RunString("rm /etc/wireguard/private.key && rm /etc/wireguard/public.key")
+	_ = cmd2
+	fmt.Println("deleting keys")
 
-	// privatekey_raw, err := pipes.RunString("bash | wg genkey > /etc/wireguard/private.key")
-	// _ = privatekey_raw
-	// publickey_raw, err := pipes.RunString("bash | wg pubkey < /etc/wireguard/private.key > /etc/wireguard/public.key")
-	// _ = publickey_raw
+	cmd, err := pipes.RunString("wg genkey | tee /etc/wireguard/private.key | wg pubkey | tee /etc/wireguard/public.key")
+	_ = cmd
+	fmt.Println("generating keys")
 
-	// cmd, err := pipes.RunString("cd /etc/wireguard | umask 077 | wg genkey > private.key | wg pubkey < private.key > public.key")
-	// if err != nil {
-	// 	fmt.Printf("error is %s\n", err)
-	// }
+	// cmd, err := exec.Command("wg", "genkey", "|", "tee", "/etc/wireguard/private.key", "|", "wg", "pubkey", ">", "/etc/wireguard/public.key").Output()
+	// _ = cmd
 
-	// privatekey_str := string(privatekey_raw)
-	// privatekey := string(privatekey_str)
-	// publickey_str := string(publickey_raw)
-	// publickey := string(publickey_str)
-	// fmt.Printf(publickey_str, privatekey_str)
+	// cmd1 := exec.Command("wg", "genkey")
+	// cmd2 := exec.Command("tee", "/etc/wireguard/private.key")
+	// cmd3 := exec.Command("wg", "pubkey", "<", "/etc/wireguard/public.key")
+	// cmds := []*exec.Cmd{cmd1, cmd2, cmd3}
+	// pipes.AssemblePipes(cmds, os.Stdin, os.Stdout)
+	// s := pipes.RunCmds(cmds)
 
-	// privatekey, err := pipes.RunString("cat /etc/wireguard/private.key >> /dev/stdout | rm /etc/wireguard/private.key")
-	// publickey, err := pipes.RunString("cat /etc/wireguard/public.key >> /dev/stdout | rm /etc/wireguard/public.key")
+	if err != nil {
+		fmt.Printf("error is %s\n", err)
+	}
 
-	if platform == "" {
+	privatekey_str, err := ioutil.ReadFile("/etc/wireguard/private.key")
+	publickey_str, err := ioutil.ReadFile("/etc/wireguard/public.key")
+
+	privatekey := string(privatekey_str)
+	publickey := string(publickey_str)
+	privatekey = strings.TrimSuffix(privatekey, "\n")
+	publickey = strings.TrimSuffix(publickey, "\n")
+
+	if platform == "" || len(platform) == 0 {
 		platform = "other"
+	}
+
+	if routing == "" || len(routing) == 0 {
+		routing = "any"
+	} else if routing == "all" {
+		routing = "all"
+	} else if routing == "any" {
+		routing = "any"
 	}
 
 	if name == "" {
@@ -284,7 +297,7 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
-	profile, err := config.AddProfile(privatekey, publickey, name, platform)
+	profile, err := config.AddProfile(privatekey, publickey, name, platform, routing)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
@@ -298,21 +311,20 @@ func addProfileHandler(w *Web) {
 	// wg_private_key="$(wg genkey)"
 	// wg_public_key="$(echo $wg_private_key | wg pubkey)"
 	// PublicKey = ${wg_public_key}
-
-	script := `
+	if routing == "lan" {
+		script := `
 cd /etc/wireguard
-wg_private_key="$(wg genkey)"
-wg_public_key="$(echo $wg_private_key | wg pubkey)"
+#wg_private_key="$(wg genkey)"
+#wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-#wg_private_key={{$.Profile.Private_Key}}
-#wg_public_key={{$.Profile.Public_Key}}
+wg_private_key={{$.Profile.Private_Key}}
+wg_public_key={{$.Profile.Public_Key}}
 
 wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
-#{{$.Profile.Name}}
 PublicKey = ${wg_public_key}
 AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
@@ -324,7 +336,6 @@ cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
-#{{$.Profile.Name}}
 PublicKey = $(cat server/server.public)
 Endpoint = {{$.Domain}}:1234
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
@@ -332,19 +343,64 @@ PersistentKeepalive = 25
 WGCLIENT
 qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
-	_, err = bash(script, struct {
-		Profile Profile
-		Domain  string
-	}{
-		profile,
-		httpHost,
-	})
-	if err != nil {
-		logger.Warn(err)
-		w.Redirect("/?error=addprofile")
-		return
+		_, err = bash(script, struct {
+			Profile Profile
+			Domain  string
+		}{
+			profile,
+			httpHost,
+		})
+		if err != nil {
+			logger.Warn(err)
+			w.Redirect("/?error=addprofile")
+			return
+		}
 	}
+	if routing == "any" {
+		script := `
+cd /etc/wireguard
+#wg_private_key="$(wg genkey)"
+#wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
+wg_private_key={{$.Profile.Private_Key}}
+wg_public_key={{$.Profile.Public_Key}}
+
+wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,0.0.0.0/0
+
+mkdir peers/{{$.Profile.Name}}
+cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+[Peer]
+PublicKey = ${wg_public_key}
+AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
+PersistentKeepalive = 25
+WGPEER
+
+mkdir clients/{{$.Profile.Name}}
+cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+[Interface]
+PrivateKey = ${wg_private_key}
+Address = 10.99.97.{{$.Profile.Number}}/24
+[Peer]
+PublicKey = $(cat server/server.public)
+Endpoint = {{$.Domain}}:1234
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 25
+WGCLIENT
+qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+`
+		_, err = bash(script, struct {
+			Profile Profile
+			Domain  string
+		}{
+			profile,
+			httpHost,
+		})
+		if err != nil {
+			logger.Warn(err)
+			w.Redirect("/?error=addprofile")
+			return
+		}
+	}
 	w.Redirect("/profiles/connect/%s?success=addprofile", profile.ID)
 }
 
@@ -499,6 +555,14 @@ func TimeDiff(a, b time.Time) (year, month, day, hour, min, sec int) {
 	return
 }
 
+func Short(s string, i int) string {
+	runes := []rune(s)
+	if len(runes) > i {
+		return string(runes[:i])
+	}
+	return s
+}
+
 func statusHandler(w *Web) {
 	wg_dump, err := exec.Command("wg", "show", "all", "dump").Output()
 	if err != nil {
@@ -575,6 +639,7 @@ func statusHandler(w *Web) {
 					Type:             "Peer",
 					Name:             split_tab[0],
 					Public_Key:       split_tab[1],
+					Public_Key_Trim:  Short(split_tab[1], 6),
 					Preshared_Key:    split_tab[2],
 					ClientEndpoint:   split_tab[3],
 					Allowed:          split_tab[4],

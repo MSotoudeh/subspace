@@ -38,7 +38,7 @@ fi
 cat <<WGSERVER >/etc/wireguard/server/server.conf
 [Interface]
 PrivateKey = $(cat /etc/wireguard/server/server.private)
-ListenPort = 5555
+ListenPort = 1234
 
 WGSERVER
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf

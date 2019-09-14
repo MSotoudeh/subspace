@@ -23,6 +23,7 @@ type Profile struct {
 	Private_Key string    `json:"privatekey"`
 	Name        string    `json:"name"`
 	Platform    string    `json:"platform"`
+	Routing     string    `json:"routing"`
 	Number      int       `json:"number"`
 	Created     time.Time `json:"created"`
 }
@@ -32,6 +33,7 @@ type Data struct {
 	Name             string
 	Domain           string
 	Public_Key       string
+	Public_Key_Trim  string
 	Allowed          string
 	AllowedIPs       []string
 	Private_Key      string
@@ -183,7 +185,7 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(privatekey, publickey, name, platform string) (Profile, error) {
+func (c *Config) AddProfile(privatekey, publickey, name, platform, routing string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -208,6 +210,7 @@ func (c *Config) AddProfile(privatekey, publickey, name, platform string) (Profi
 		Private_Key: privatekey,
 		Name:        name,
 		Platform:    platform,
+		Routing:     routing,
 		Number:      number,
 		Created:     time.Now(),
 	}

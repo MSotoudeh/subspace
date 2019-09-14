@@ -56,16 +56,31 @@
                         <input name="name" type="text" value="{{$.Request.FormValue "name"}}" placeholder="Device Name" autofocus>
                     </div>
                     <div class="field">
-                        <div id="add-profile-platform" class="ui fluid selection dropdown">
-                            <input type="hidden" name="platform" value="yes">
-                            <i class="dropdown icon"></i>
-                            <div class="default text">Select platform</div>
-                            <div class="menu">
-                                <div class="item" data-value="windows"><i class="black windows icon"></i>Windows</div>
-                                <div class="item" data-value="osx"><i class="black apple icon"></i>Mac OS X</div>
-                                <div class="item" data-value="ios"><i class="black apple icon"></i>iOS</div>
-                                <div class="item" data-value="android"><i class="black android icon"></i>Android</div>
-                                <div class="item" data-value="other"><i class="black asterisk dot icon"></i>Other</div>
+                        <div class="ui equal width grid">
+                            <div class="column">
+                                <div id="add-profile-platform" class="ui fluid selection dropdown">
+                                    <input type="hidden" name="platform">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">Select platform</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="windows"><i class="black windows icon"></i>Windows</div>
+                                        <div class="item" data-value="osx"><i class="black apple icon"></i>Mac OS X</div>
+                                        <div class="item" data-value="ios"><i class="black apple icon"></i>iOS</div>
+                                        <div class="item" data-value="android"><i class="black android icon"></i>Android</div>
+                                        <div class="item" data-value="other"><i class="black asterisk dot icon"></i>Other</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div id="add-profile-routing" class="ui fluid selection dropdown">
+                                    <input type="hidden" name="routing">
+                                    <i class="dropdown icon"></i>
+                                    <div class="default text">Select routing</div>
+                                    <div class="menu">
+                                        <div class="item" data-value="lan">LAN</div>
+                                        <div class="item" data-value="any">Any (0.0.0.0/0)</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -90,7 +105,8 @@
             <div class="ui three stackable cards">
                 {{range $n, $p := $.Profiles}}
                     <div class="show-profile card">
-                        <a href="/profiles/delete/{{$p.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
+                        <a href="/profiles/delete/{{$p.ID}}" class="ui right corner label"><i class="trash alternate icon"></i></a>
+                        <!-- <a href="/profiles/edit/{{$p.ID}}" class="ui right attached corner label"><i class="trash alternate icon"></i></a> -->
                         <div class="content">
                             <div class="header">
                                 <i class="large
@@ -114,33 +130,42 @@
                                     <i class="calendar icon"></i>
                                     <div class="content">
                                         <div class="header">
-                                            Added {{time $p.Created}}                                    
+                                            Added {{time $p.Created}}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="item">
+                                    <i class="exchange icon"></i>
+                                    <div class="content">
+                                        <div class="header">
+                                            Routing: {{$p.Routing}}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>         
                         <div class="extra content">
-                            <!-- <div class="ui three buttons">
-                                <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button"><i class="desktop icon"></i> Connect</a>
-                                <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button"><i class="save icon"></i> Download</a>
-                                <div id="qr{{$p.Number}}" class="modal">
-                                    Here is your QR Code for {{$p.Name}}:
-                                    <br>
-                                    <img src="/profiles/png/wireguard/{{$p.ID}}">
-                                </div>
-                                <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button"><i class="qr code icon"></i> QR</a>
-                            </div> -->
-                            <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button"><i class="desktop icon"></i> Connect</a>
-                            <br>
-                            <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button"><i class="save icon"></i> Download</a>
-                            <br>
+                            <div class="ui three buttons">
+                            <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Connect" data-inverted="">
+                                <i class="desktop icon"></i>
+                            </a>
+                            <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Download" data-inverted="">
+                                <i class="save icon"></i>
+                            </a>
                             <div id="qr{{$p.Number}}" class="modal">
-                                Here is your QR Code for {{$p.Name}}:
-                                <br>
-                                <img src="/profiles/png/wireguard/{{$p.ID}}">
+                                    <div class="ui header">
+                                            QR Code for {{$p.Name}}:
+                                    </div>
+                                    <div class="image content">
+                                        <div class="ui medium image">
+                                        <img src="/profiles/png/wireguard/{{$p.ID}}">
+                                        </div>
+                                    </div>
                             </div>
-                            <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button"><i class="qr code icon"></i> QR</a>
+                            <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button" data-tooltip="QR Code" data-inverted="">
+                                <i class="qr code icon"></i>
+                            </a>
+                            </div>
                         </div>
                     </div>
                 {{end}}

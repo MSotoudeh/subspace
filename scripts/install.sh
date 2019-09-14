@@ -195,7 +195,8 @@ chmod +x /bin/ /usr/local/bin/subspace
 #sudo bash "scripts/sed.sh"
 
 # set vars
-client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
+client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | (echo $client_port | cut -f1 -d' '))
+#client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
 server_port=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$' | tail -n1)
 service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | grep -oE '[^ ]+$' | tail -n1)
 
