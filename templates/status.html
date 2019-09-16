@@ -90,8 +90,11 @@
                                       </tr>
                                       <tr>
                                         <td>Allowed IPs:</td>
-                                        <!-- <td>{{$s.Allowed}}</td> -->
-                                        <td>{{$s.AllowedIPs}}</td> 
+                                        <td>
+                                      {{range $i, $a := $s.AllowedIPs}}
+                                        {{$a}}<br>
+                                      {{end}}
+                                        </td>
                                       </tr>
                                       {{if eq $s.Keepalive "off"}}
                                         <tr>

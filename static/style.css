@@ -8,6 +8,10 @@ body {
     background-color: #fdfdfd !important;
 }
 
+.show-profile.card .content {
+    flex-grow: 0 !important;
+}
+
 .block.header {
     background-color: #fdfdfd !important;
 }

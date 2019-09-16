@@ -107,14 +107,44 @@ echo -e "${LIGHTBLUE}> Enable IP forwarding ${NC}"
 printf ${WHITE}
 echo ">> "$(/sbin/sysctl -w net.ipv4.ip_forward=1)
 echo ">> "$(/sbin/sysctl -w net.ipv6.conf.all.forwarding=1)
-#echo ">> "$(sysctl -w net.ipv4.ip_forward=1)
-#echo ">> "$(sysctl -w net.ipv6.conf.all.forwarding=1)
 
 echo -e "${LIGHTBLUE}> Enable IPV4 firewall forwarding rules ${NC}"
 # # Enable IP forwarding
-echo ">> NAT"$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
-echo ">> Forward 1"$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
-echo ">> Forward 2"$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
+if ! /sbin/iptables -t nat --check POSTROUTING -s 10.99.97.0/24 -j MASQUERADE >/dev/null 2>&1; then
+	echo -e "${LIGHTBLUE}>> NAT rule enabled ${NC}"$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
+else
+	echo -e "${YELLOW}>> NAT already there ${NC}"
+fi
+
+if ! /sbin/iptables --check FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT >/dev/null 2>&1; then
+	echo -e "${LIGHTBLUE}>> Forward 1 rule enabled ${NC}"$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
+else
+        echo -e "${YELLOW}>> Forward 1 already there ${NC}"
+fi
+
+if ! /sbin/iptables --check FORWARD -s 10.99.97.0/24 -j ACCEPT >/dev/null 2>&1; then
+	echo -e "${LIGHTBLUE}>> Forward 2 rule enabled ${NC}"$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
+else
+        echo -e "${YELLOW}>> Forward 2 already there ${NC}"
+fi
+
+#echo ">> NAT"$(/sbin/iptables -t nat --append POSTROUTING -s 10.99.97.0/24 -j MASQUERADE)
+#echo ">> Forward 1"$(/sbin/iptables --append FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT)
+#echo ">> Forward 2"$(/sbin/iptables --append FORWARD -s 10.99.97.0/24 -j ACCEPT)
+
+echo -e "${LIGHTBLUE}> Enable IPV4 DNS Leak Protection ${NC}"
+# # Enable DNS Leak Protection
+if ! /sbin/iptables -t nat --check OUTPUT -s 10.99.97.0/16 -p udp --dport 53 -j DNAT --to 10.99.97.1:53 >/dev/null 2>&1; then
+    echo -e "${LIGHTBLUE}>> DNS Leak 1 rule enabled ${NC}"$(/sbin/iptables -t nat --append OUTPUT -s 10.99.97.0/16 -p udp --dport 53 -j DNAT --to 10.99.97.1:53)
+else
+        echo -e "${YELLOW}>> DNS Leak 1 already there ${NC}"
+fi
+
+if ! /sbin/iptables -t nat --check OUTPUT -s 10.99.97.0/16 -p tcp --dport 53 -j DNAT --to 10.99.97.1:53 >/dev/null 2>&1; then
+    echo -e "${LIGHTBLUE}>> DNS Leak 2 rule enabled ${NC}"$(/sbin/iptables -t nat --append OUTPUT -s 10.99.97.0/16 -p tcp --dport 53 -j DNAT --to 10.99.97.1:53)
+else
+        echo -e "${YELLOW}>> DNS Leak 2 already there ${NC}"
+fi
 
 echo -e "${LIGHTBLUE}> Install build tools ${NC}"
 # gcc for cgo
@@ -195,18 +225,19 @@ chmod +x /bin/ /usr/local/bin/subspace
 #sudo bash "scripts/sed.sh"
 
 # set vars
-client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | (echo $client_port | cut -f1 -d' '))
+client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | cut -f1 -d' ')
 #client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d,)
 server_port=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$' | tail -n1)
-service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | grep -oE '[^ ]+$' | tail -n1)
+service_host_lines=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | cut -f1 -d' ')
+service_host=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | grep -oE '[^ ]+$' | cut -f1 -d' ' | tail -n1)
 
-client_port_lines=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ')
-client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f1 -d' '))
-client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d' ' | (echo $client_port_lines | cut -f2 -d' '))
-#client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" ")
-#client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f1 -d" " | cut -f2- -d" ")
+client_port_lines=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep "Endpoint " | cut -f1 -d' ')
+client_port_line1=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep "Endpoint " | cut -f1 -d' ' | (echo $client_port_lines | cut -f1 -d' '))
+client_port_line2=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep "Endpoint " | cut -f1 -d' ' | (echo $client_port_lines | cut -f2 -d' '))
+client_port=$(sed = $PWD/handlers.go | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | cut -f1 -d' ' | tail -n2)
 server_port_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "Lis" | cut -f1 -d" " | tail -n1)
-service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | cut -f1 -d" " | tail -n1)
+service_host_line=$(sed = $PWD/scripts/install.sh | sed 'N;s/\n/ /' | grep "http-host" | cut -f1 -d' ' | tail -n1)
+
 
 echo -e "${LIGHTBLUE}> Actual host is: ${NC}"${YELLOW}$service_host${NC}
 #echo ""
