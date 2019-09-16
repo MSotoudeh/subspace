@@ -168,6 +168,8 @@ func http_server(server_type string) {
 	r.GET("/help", Log(WebHandler(helpHandler, "help")))
 	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))
+	r.GET("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
+	r.POST("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
 
 	r.GET("/signin", Log(WebHandler(signinHandler, "signin")))
 	r.GET("/signout", Log(WebHandler(signoutHandler, "signout")))

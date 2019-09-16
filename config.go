@@ -90,6 +90,7 @@ type Info struct {
 		Password string `json:"password"`
 	} `json:"mail"`
 	Server struct {
+		ServerConfigured   bool   `json:"serverconfigure"`
 		IP_Address         string `json:"ip_address"`
 		Port               int    `json:"port"`
 		Network_Adapter    string `json:"network_adapter"`

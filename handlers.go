@@ -337,7 +337,7 @@ PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:5555
+Endpoint = {{$.Domain}}:1234
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
 WGCLIENT
@@ -576,7 +576,7 @@ func statusHandler(w *Web) {
 	var ok bool
 	var Datas []Data
 	var HandshakeStatus string
-	domain := config.Info.Domain
+	//domain := config.Info.Domain
 
 	for i := 0; i < (len(split_line) - 1); i++ {
 
@@ -589,7 +589,7 @@ func statusHandler(w *Web) {
 						Data{
 							Type:        "Server",
 							Name:        split_tab[0],
-							Domain:      domain,
+							Domain:      httpHost,
 							Private_Key: split_tab[1],
 							Public_Key:  split_tab[2],
 							Port:        split_tab[3],
@@ -811,7 +811,12 @@ func settingsHandler(w *Web) {
 	w.Redirect("/?success=settings")
 }
 
-func serversettingsHandler(w *Web) {
+func configureserverHandler(w *Web) {
+	if config.FindInfo().Server.ServerConfigured {
+		w.Redirect("/?error=serverconfigured")
+		return
+	}
+
 	if w.r.Method == "GET" {
 		w.HTML()
 		return
@@ -839,6 +844,51 @@ func serversettingsHandler(w *Web) {
 	}
 
 	config.UpdateInfo(func(i *Info) error {
+		i.Server.ServerConfigured = true
+		i.Server.IP_Address = ip_address
+		i.Server.Port = int_port
+		i.Server.Network_Adapter = network_adapter
+		i.Server.Virtual_IP_Address = virtual_ip_address
+		i.Server.CIDR = cidr
+		i.Server.DNS = dns
+		i.Server.Public_Key = public_key
+		i.Server.Config_Path = config_path
+		return nil
+	})
+
+	w.Redirect("/?success=serversettings")
+}
+
+func serversettingsHandler(w *Web) {
+
+	if w.r.Method == "GET" {
+		w.HTML()
+		return
+	}
+
+	ip_address := w.r.FormValue("ip_address")
+	port := w.r.FormValue("port")
+	network_adapter := w.r.FormValue("network_adapter")
+	virtual_ip_address := w.r.FormValue("virtual_ip_address")
+	cidr := w.r.FormValue("cidr")
+	dns := w.r.FormValue("dns")
+	public_key := w.r.FormValue("public_key")
+	config_path := w.r.FormValue("config_path")
+
+	int_port, err := strconv.Atoi(port)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if ip_address != "" || port != "" || network_adapter != "" || virtual_ip_address != "" || cidr != "" || dns != "" || public_key != "" || config_path != "" {
+		if err != nil {
+			w.Redirect("/serversettings?error=emptywrongtype")
+			return
+		}
+	}
+
+	config.UpdateInfo(func(i *Info) error {
+		i.Server.ServerConfigured = true
 		i.Server.IP_Address = ip_address
 		i.Server.Port = int_port
 		i.Server.Network_Adapter = network_adapter

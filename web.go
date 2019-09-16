@@ -128,13 +128,18 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 			Info:     config.FindInfo(),
 		}
 
-		if section == "signin" || section == "forgot" || section == "configure" {
+		if section == "signin" || section == "forgot" || section == "configure" || section == "configureserver" {
 			h(web)
 			return
 		}
 
 		if !config.FindInfo().Configured {
 			web.Redirect("/configure")
+			return
+		}
+
+		if !config.FindInfo().Server.ServerConfigured {
+			web.Redirect("/configureserver")
 			return
 		}
 
