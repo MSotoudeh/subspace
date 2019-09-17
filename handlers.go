@@ -239,34 +239,106 @@ func signinHandler(w *Web) {
 	w.Redirect("/")
 }
 
+func restartServerHandler(w *Web) {
+
+	// Store actual host and port to vars !!! only valid if matching the one in wg0.conf !!!
+	old_port := config.Info.Server.Port
+	old_host := config.Info.Server.IP_Address
+	_ = old_host
+	_ = old_port
+	old_str_port := strconv.Itoa(old_port)
+	_ = old_str_port
+
+	// Store new values from form to vars !!!! Empty as for is on previous page... Added fields... !!!!
+	new_port := w.r.FormValue("port")
+	new_host := w.r.FormValue("ip_address")
+	_ = new_host
+	_ = new_port
+	new_int_port, err := strconv.Atoi(new_port)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// Shutdown the WG interface
+	wg_down, err := pipes.RunString("wg-quick down /etc/wireguard/server/wg0.conf")
+	_ = wg_down
+	fmt.Println(wg_down)
+	// change_server_port, err := pipes.RunString("sed -i 3s/{{$.old_port}}/{{$.new_port}}/g /etc/wireguard/server/wg0.conf")
+	// _ = change_server_port
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+
+	//--------------------------------Working-----------------
+	// change_server_port := exec.Command("sed", "-i", "s/"+old_str_port+"/"+new_port+"/g", "/etc/wireguard/server/wg0.conf")
+	// _ = change_server_port
+	// err_chg := change_server_port.Run()
+	// if err_chg != nil {
+	// 	fmt.Printf("error is %s\n", err_chg)
+	// }
+	//--------------------------------
+
+	// fmt.Println(change_server_port)
+
+	// change_clients_host_port := pipes.RunString("")
+
+	// server_port=$(sed = /etc/wireguard/server/wg0.conf | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$' | tail -n1)
+	// client_port_lines=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep "Endpoint " | cut -f1 -d' ')
+	// client_ports=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | cut -f1 -d' ')
+	// client_hosts=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep "Endpoint =" | cut -f1 -d: | cut -f4 -d ' ')
+
+	// Update the new values in Server
+	config.UpdateInfo(func(i *Info) error {
+		i.Server.IP_Address = new_host
+		i.Server.Port = new_int_port
+		return nil
+	})
+
+	//Change server port
+	// fmt.Println(new_host)
+	// fmt.Println(new_int_port)
+	// 		`sed -i s/{{$.Old_Port}}/{{$.New_Port}}/g /etc/wireguard/server/wg0.conf`
+	script :=
+		`sed -i 's/.*ListenPort.*/ListenPort = {{$.New_Port}}/' /etc/wireguard/server/wg0.conf`
+	_, err = bash(script, struct {
+		Old_Port int
+		New_Port int
+	}{
+		old_port,
+		new_int_port,
+	})
+	if err != nil {
+		logger.Warn(err)
+		w.Redirect("/?error=changeserverport")
+		return
+	}
+
+	// Put back up the WG interface
+	wg_up, err := pipes.RunString("wg-quick up /etc/wireguard/server/wg0.conf")
+	_ = wg_up
+	fmt.Println(wg_up)
+
+	if err != nil {
+		logger.Warn(err)
+		w.Redirect("/?error=restartserver")
+		return
+	}
+
+	w.Redirect("/?success=restartserver")
+}
+
 func addProfileHandler(w *Web) {
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
-	// privatekey := strings.TrimSpace(w.r.FormValue("platform"))
-	// publickey := strings.TrimSpace(w.r.FormValue("platform"))
 	routing := strings.TrimSpace(w.r.FormValue("routing"))
-
-	// command := []string{"wg", "genkey", "|", "tee", "/etc/wireguard/private.key", "|", "wg", "pubkey", ">", "/etc/wireguard/public.key"}
-	// cmd, err := pipes.RunStrings(command...)
-	// _ = cmd
+	ip_address := config.Info.Server.IP_Address
+	port := config.Info.Server.Port
 
 	cmd2, err := pipes.RunString("rm /etc/wireguard/private.key && rm /etc/wireguard/public.key")
 	_ = cmd2
-	fmt.Println("deleting keys")
 
 	cmd, err := pipes.RunString("wg genkey | tee /etc/wireguard/private.key | wg pubkey | tee /etc/wireguard/public.key")
 	_ = cmd
-	fmt.Println("generating keys")
-
-	// cmd, err := exec.Command("wg", "genkey", "|", "tee", "/etc/wireguard/private.key", "|", "wg", "pubkey", ">", "/etc/wireguard/public.key").Output()
-	// _ = cmd
-
-	// cmd1 := exec.Command("wg", "genkey")
-	// cmd2 := exec.Command("tee", "/etc/wireguard/private.key")
-	// cmd3 := exec.Command("wg", "pubkey", "<", "/etc/wireguard/public.key")
-	// cmds := []*exec.Cmd{cmd1, cmd2, cmd3}
-	// pipes.AssemblePipes(cmds, os.Stdin, os.Stdout)
-	// s := pipes.RunCmds(cmds)
 
 	if err != nil {
 		fmt.Printf("error is %s\n", err)
@@ -304,18 +376,9 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
-	// /etc/wireguard
-	// folder each: server, clients, peers, config
-	//
-
-	// wg_private_key="$(wg genkey)"
-	// wg_public_key="$(echo $wg_private_key | wg pubkey)"
-	// PublicKey = ${wg_public_key}
 	if routing == "lan" {
 		script := `
 cd /etc/wireguard
-#wg_private_key="$(wg genkey)"
-#wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
 wg_private_key={{$.Profile.Private_Key}}
 wg_public_key={{$.Profile.Public_Key}}
@@ -337,18 +400,20 @@ PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:1234
+Endpoint = {{$.Ip_address}}:{{$.Port}}
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
 WGCLIENT
 qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 		_, err = bash(script, struct {
-			Profile Profile
-			Domain  string
+			Profile    Profile
+			Ip_address string
+			Port       int
 		}{
 			profile,
-			httpHost,
+			ip_address,
+			port,
 		})
 		if err != nil {
 			logger.Warn(err)
@@ -359,8 +424,6 @@ qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < client
 	if routing == "any" {
 		script := `
 cd /etc/wireguard
-#wg_private_key="$(wg genkey)"
-#wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
 wg_private_key={{$.Profile.Private_Key}}
 wg_public_key={{$.Profile.Public_Key}}
@@ -382,18 +445,20 @@ PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:1234
+Endpoint = {{$.Ip_address}}:{{$.Port}}
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 WGCLIENT
 qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 		_, err = bash(script, struct {
-			Profile Profile
-			Domain  string
+			Profile    Profile
+			Ip_address string
+			Port       int
 		}{
 			profile,
-			httpHost,
+			ip_address,
+			port,
 		})
 		if err != nil {
 			logger.Warn(err)

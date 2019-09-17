@@ -24,7 +24,7 @@
             <div class="ui hidden divider"></div>
         {{end}}
 
-        <form class="ui huge form" action="/serversettings" method="POST" novalidate autocomplete="off">
+        <form class="ui huge form" action="/server/settings" method="POST" novalidate autocomplete="off">
             <div class="two fields">
                 <div class="field">
                     <div class="ui small header">IP Address</div>
@@ -72,6 +72,19 @@
                     <button type="submit" class="ui huge fluid black button">Save Server Settings</button>
                 </div>
             </div>
+        </form>
+        <form class="ui huge form" action="/server/restart" method="POST" novalidate autocomplete="off">
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">IP Address</div>
+                    <input name="ip_address" type="text" placeholder="IP Address" value="{{$.Info.Server.IP_Address}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Port</div>
+                    <input name="port" type="text" placeholder="Port" value="{{$.Info.Server.Port}}">
+                </div>
+            </div>
+            <button type="submit" class="ui huge fluid black button">Save and Restart Server</button>
         </form>
     </div>
 
