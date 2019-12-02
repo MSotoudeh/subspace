@@ -1,4 +1,4 @@
-# Subspace - A simple WireGuard VPN server GUI with Status page 
+# Subspace - WireGuard VPN server GUI with Status page 
 
 ![Screenshot](subspace_1.png)
 ![Screenshot](subspace_2.png)
