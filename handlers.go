@@ -337,7 +337,7 @@ PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:1234
+Endpoint = {{$.Domain}}:5555
 AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
 PersistentKeepalive = 25
 WGCLIENT
@@ -382,7 +382,7 @@ PrivateKey = ${wg_private_key}
 Address = 10.99.97.{{$.Profile.Number}}/24
 [Peer]
 PublicKey = $(cat server/server.public)
-Endpoint = {{$.Domain}}:1234
+Endpoint = {{$.Domain}}:5555
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 WGCLIENT
