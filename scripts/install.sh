@@ -112,9 +112,12 @@ apt-get update >/dev/null 2>&1
 echo -e "${LIGHTBLUE}> Install dirmngr, qrencode, dnsutils (dig) and curl${NC}"
 apt-get install dirmngr qrencode dnsutils curl -y >/dev/null 2>&1
 
+echo -e "${LIGHTBLUE}> Adding debian buster backports repo ${NC}"
+echo "deb http://deb.debian.org/debian buster-backports main" | sudo tee /etc/apt/sources.list.d/buster-backports.list
+
 echo -e "${LIGHTBLUE}> Install WireGuard ${NC}"
-echo "deb http://deb.debian.org/debian/ unstable main" > /etc/apt/sources.list.d/unstable-wireguard.list
-printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/preferences.d/limit-unstable
+#echo "deb http://deb.debian.org/debian/ unstable main" > /etc/apt/sources.list.d/unstable-wireguard.list
+#printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/preferences.d/limit-unstable
 apt update  >/dev/null 2>&1
 apt install -y wireguard >/dev/null 2>&1
 
@@ -174,7 +177,8 @@ echo -e "${LIGHTBLUE}> Install build tools ${NC}"
 apt-get install -y --no-install-recommends g++ gcc libc6-dev make pkg-config >/dev/null 2>&1
 
 # set golang version
-GOLANG_VERSION='1.12.9'
+GOLANG_VERSION='1.14.4'
+#GOLANG_VERSION='1.12.9'
 #GOLANG_VERSION='1.11.5'
 
 # install golang
@@ -198,20 +202,23 @@ mkdir -p "$GOPATH/src" "$GOPATH/bin" #&& chmod -R 777 "$GOPATH"
 
 cd $GOPATH
 
-echo -e "${LIGHTBLUE}> Running go get ${NC}"
-go get -v \
-    github.com/jteeuwen/go-bindata/ \
-    github.com/dustin/go-humanize \
-    github.com/julienschmidt/httprouter \
-    github.com/Sirupsen/logrus \
-    github.com/gorilla/securecookie \
-    golang.org/x/crypto/acme/autocert \
-    golang.org/x/time/rate \
-    golang.org/x/crypto/bcrypt \
-    go.uber.org/zap \
-    gopkg.in/gomail.v2 \
-    github.com/ebuchman/go-shell-pipes \
-    github.com/jasonlvhit/gocron
+echo -e "${LIGHTBLUE}> Running go generate ${NC}"
+go generate -v -x
+
+#echo -e "${LIGHTBLUE}> Running go get ${NC}"
+#go get -v \
+#    github.com/jteeuwen/go-bindata/ \
+#    github.com/dustin/go-humanize \
+#    github.com/julienschmidt/httprouter \
+#    github.com/Sirupsen/logrus \
+#    github.com/gorilla/securecookie \
+#    golang.org/x/crypto/acme/autocert \
+#    golang.org/x/time/rate \
+#    golang.org/x/crypto/bcrypt \
+#    go.uber.org/zap \
+#    gopkg.in/gomail.v2 \
+#    github.com/ebuchman/go-shell-pipes \
+#    github.com/jasonlvhit/gocron
 
 GODEBUG="netdns=go http2server=0"
 
@@ -314,27 +321,30 @@ fi
 
 #sudo bash "scripts/conf.sh"
 
-echo -e "${LIGHTBLUE}> Running go-bindata ${NC}"
-if [ $ARCH == "armhf" ]
-then
-./bin/go-bindata-arm --pkg main static/... templates/... email/... >/dev/null 2>&1
-go fmt >/dev/null 2>&1
-go vet --all >/dev/null 2>&1
-fi
+echo -e "${LIGHTBLUE}> Running go build ${NC}"
+go build
 
-if [ $ARCH == "amd64" ]
-then
-./bin/go-bindata --pkg main static/... templates/... email/... >/dev/null 2>&1
-go fmt >/dev/null 2>&1
-go vet --all >/dev/null 2>&1
-fi
+#echo -e "${LIGHTBLUE}> Running go-bindata ${NC}"
+#if [ $ARCH == "armhf" ]
+#then
+#./bin/go-bindata-arm --pkg main static/... templates/... email/... >/dev/null 2>&1
+#go fmt >/dev/null 2>&1
+#go vet --all >/dev/null 2>&1
+#fi
 
-CGO_ENABLED=0
-GOOS="linux"
-GOARCH="amd64"
-BUILD_VERSION="0.1"
-echo -e "${LIGHTBLUE}> Building subspace ${NC}"
-go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o bin/subspace-linux-amd64
+#if [ $ARCH == "amd64" ]
+#then
+#./bin/go-bindata --pkg main static/... templates/... email/... >/dev/null 2>&1
+#go fmt >/dev/null 2>&1
+#go vet --all >/dev/null 2>&1
+#fi
+
+#CGO_ENABLED=0
+#GOOS="linux"
+#GOARCH="amd64"
+#BUILD_VERSION="0.1"
+#echo -e "${LIGHTBLUE}> Building subspace ${NC}"
+#go build -v --compiler gc --ldflags "-extldflags -static -s -w -X main.version=${BUILD_VERSION}" -o bin/subspace-linux-amd64
 
 cd $GOPATH
 
