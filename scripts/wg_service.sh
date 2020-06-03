@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 
+cp /etc/wireguard/server/server_clean.conf /etc/wireguard/server/server.conf
+
 if ip link show wg0 2>/dev/null; then
     ip link del wg0
 fi

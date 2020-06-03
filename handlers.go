@@ -294,12 +294,10 @@ func restartServerHandler(w *Web) {
 		return nil
 	})
 
-	//Change server port
-	// fmt.Println(new_host)
-	// fmt.Println(new_int_port)
+	//Change server host and port
 	// 		`sed -i s/{{$.Old_Port}}/{{$.New_Port}}/g /etc/wireguard/server/wg0.conf`
 	script :=
-		`sed -i 's/.*ListenPort.*/ListenPort = {{$.New_Port}}/' /etc/wireguard/server/wg0.conf`
+		`sed -i 's/.*ListenPort.*/ListenPort = {{$.New_Port}}/' /etc/wireguard/server/server.conf`
 	_, err = bash(script, struct {
 		Old_Port int
 		New_Port int
@@ -313,10 +311,9 @@ func restartServerHandler(w *Web) {
 		return
 	}
 
-	// Put back up the WG interface
-	wg_up, err := pipes.RunString("wg-quick up /etc/wireguard/server/wg0.conf")
-	_ = wg_up
-	fmt.Println(wg_up)
+	wg_service, err := pipes.RunString("/usr/local/etc/wg_service.sh")
+	_ = wg_service
+	fmt.Println(wg_service)
 
 	if err != nil {
 		logger.Warn(err)

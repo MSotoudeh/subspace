@@ -365,6 +365,7 @@ if ! test -f /etc/wireguard/server/server.private ; then
     wg genkey | tee server/server.private | wg pubkey > server/server.public
 else
     echo -e "${YELLOW}> Server already exists!${NC}"
+    cp /etc/wireguard/server/server.conf /etc/wireguard/server/server_bak.conf
 fi
 
 cat <<WGSERVER >/etc/wireguard/server/server.conf
@@ -373,6 +374,7 @@ PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = $port
 
 WGSERVER
+cp /etc/wireguard/server/server.conf /etc/wireguard/server/server_clean.conf
 cat /etc/wireguard/peers/*/*.conf >>/etc/wireguard/server/server.conf
 #find /etc/wireguard/peers/ -type f -name '*.conf' --exec cat {} + >>/etc/wireguard/server/server.conf
 
@@ -413,7 +415,6 @@ ip link set wg0 up >/dev/null 2>&1
 
 # copy wg_service start script
 echo -e "${LIGHTBLUE}> Copying scripts/wg_service.sh to /usr/local/etc/wg_service.sh${NC}"
-cp scripts/wg_service.sh /usr/local/etc/wg_service.sh
 
 # chmod +x it
 echo -e "${LIGHTBLUE}> chmod +x on /usr/local/etc/wg_service.sh${NC}"
