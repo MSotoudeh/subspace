@@ -18,19 +18,40 @@ var (
 )
 
 type Profile struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	Platform string    `json:"platform"`
-	Number   int       `json:"number"`
-	Created  time.Time `json:"created"`
+	ID          string    `json:"id"`
+	Public_Key  string    `json:"publickey"`
+	Private_Key string    `json:"privatekey"`
+	Name        string    `json:"name"`
+	Platform    string    `json:"platform"`
+	Routing     string    `json:"routing"`
+	Number      int       `json:"number"`
+	Created     time.Time `json:"created"`
 }
 
-type Status struct {
-	Name    string
-	Port    string
-	State   string
-	Type    string
-	Allowed string
+type Data struct {
+	Type             string
+	Name             string
+	Domain           string
+	Public_Key       string
+	Public_Key_Trim  string
+	Allowed          string
+	AllowedIPs       []string
+	Private_Key      string
+	Port             string
+	Latest_handshake string
+	Transfer_rx      string
+	Transfer_tx      string
+	Keepalive        string
+	ClientEndpoint   string
+	Preshared_Key    string
+}
+
+type DynDNS struct {
+	Domain string
+	Token  string
+	DynIP  string
+	IP     string
+	Status string
 }
 
 func (p Profile) NameClean() string {
@@ -68,6 +89,21 @@ type Info struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	} `json:"mail"`
+	Server struct {
+		ServerConfigured   bool   `json:"serverconfigure"`
+		IP_Address         string `json:"ip_address"`
+		Port               int    `json:"port"`
+		Network_Adapter    string `json:"network_adapter"`
+		Virtual_IP_Address string `json:"virtual_ip_address"`
+		CIDR               string `json:"cidr"`
+		DNS                string `json:"dns"`
+		Public_Key         string `json:"public_key"`
+		Config_Path        string `json:"config_path"`
+	} `json:"server"`
+	DynDNS struct {
+		Domain string `json:"domain"`
+		Token  string `json:"token"`
+	} `json:"dyndns"`
 }
 
 type Config struct {
@@ -150,7 +186,7 @@ func (c *Config) UpdateProfile(id string, fn func(*Profile) error) error {
 	return c.save()
 }
 
-func (c *Config) AddProfile(name, platform string) (Profile, error) {
+func (c *Config) AddProfile(privatekey, publickey, name, platform, routing string) (Profile, error) {
 	c.Lock()
 	defer c.Unlock()
 
@@ -168,12 +204,16 @@ func (c *Config) AddProfile(name, platform string) (Profile, error) {
 			number = p.Number + 1
 		}
 	}
+
 	profile := Profile{
-		ID:       id,
-		Name:     name,
-		Platform: platform,
-		Number:   number,
-		Created:  time.Now(),
+		ID:          id,
+		Public_Key:  publickey,
+		Private_Key: privatekey,
+		Name:        name,
+		Platform:    platform,
+		Routing:     routing,
+		Number:      number,
+		Created:     time.Now(),
 	}
 	c.Profiles = append(c.Profiles, &profile)
 	return profile, c.save()

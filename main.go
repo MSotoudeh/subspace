@@ -126,7 +126,7 @@ func main() {
 	logger.Debugf("debug logging is enabled")
 
 	// config
-	config, err = NewConfig("config.json")
+	config, err = NewConfig("config/config.json")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -160,9 +160,16 @@ func http_server(server_type string) {
 	r := &httprouter.Router{}
 	r.GET("/", Log(WebHandler(indexHandler, "index")))
 	r.GET("/status", Log(WebHandler(statusHandler, "status")))
+	r.GET("/dyndns", Log(WebHandler(dyndnsHandler, "dyndns")))
+	r.GET("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
+	r.POST("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
+	r.GET("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
+	r.POST("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
 	r.GET("/help", Log(WebHandler(helpHandler, "help")))
 	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))
+	r.GET("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
+	r.POST("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
 
 	r.GET("/signin", Log(WebHandler(signinHandler, "signin")))
 	r.GET("/signout", Log(WebHandler(signoutHandler, "signout")))
@@ -170,10 +177,16 @@ func http_server(server_type string) {
 	r.GET("/forgot", Log(WebHandler(forgotHandler, "forgot")))
 	r.POST("/forgot", Log(WebHandler(forgotHandler, "forgot")))
 
+	r.GET("/server/settings", Log(WebHandler(serversettingsHandler, "serversettings")))
+	r.POST("/server/settings", Log(WebHandler(serversettingsHandler, "serversettings")))
+	r.GET("/server/restart", Log(WebHandler(restartServerHandler, "serverrestart")))
+	r.POST("/server/restart", Log(WebHandler(restartServerHandler, "serverrestart")))
 	r.GET("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
 	r.POST("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
+	r.GET("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
+	r.POST("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
 	r.GET("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.POST("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.GET("/profiles/connect/:profile", Log(WebHandler(connectProfileHandler, "profiles/connect")))
@@ -224,6 +237,11 @@ func https_server(server_type string) {
 	r := &httprouter.Router{}
 	r.GET("/", Log(WebHandler(indexHandler, "index")))
 	r.GET("/status", Log(WebHandler(statusHandler, "status")))
+	r.GET("/dyndns", Log(WebHandler(dyndnsHandler, "dyndns")))
+	r.GET("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
+	r.POST("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
+	r.GET("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
+	r.POST("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
 	r.GET("/help", Log(WebHandler(helpHandler, "help")))
 	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))
@@ -238,6 +256,8 @@ func https_server(server_type string) {
 	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
 	r.POST("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
+	r.GET("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
+	r.POST("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
 	r.GET("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.POST("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
 	r.GET("/profiles/connect/:profile", Log(WebHandler(connectProfileHandler, "profiles/connect")))

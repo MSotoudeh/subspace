@@ -6,36 +6,117 @@
         Status
     </div>
     <div class="ui hidden divider"></div>
-      {{if $.Status}}
-      <div class="ui two stackable cards">
-        <!-- {{range $n, $s := $.Status}} -->
-                <div class="show-profile card">
-                    <a href="/profiles/delete/" class="ui right corner label "><i class="trash alternate icon"></i></a>
-                    <div class="content">
-                        <div class="header">
-                            <i class="icon"></i>{{$.Status.Type}}
-                        </div>
-                    </div>
-                    <div class="extra lcontent">
-                        <div class="ui large list">
-                            <div class="item">
-                                <i class="calendar icon"></i>
-                                <div class="content">
-                                    <div class="header">
-                                      <!-- <ul>{{$.Status.Allowed}}</ul> -->
-                                      <ul>{{$.Status.Port}}</ul>
-                                      <ul>{{$.Status.State}}</ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="extra content">
-                        <a href="/profiles/connect/" class="ui large basic black fluid button">Disconnect device</a>
-                    </div>
-                </div>
-          <!-- {{end}} -->
-      </div>
+      {{if $.Statuses}}
+        <div class="ui one stackable cards">
+          {{range $n, $s := $.Statuses}}
+              {{if eq $s.Type "Server"}}
+              <div class="show-profile card">
+                  <div class="content">
+                      <div class="header">
+                          <i class="server icon"></i>
+                          {{$s.Type}}
+                          <!-- {{$s.Public_Key}} -->
+                      </div>
+                  </div>
+                  <div class="extra lcontent">
+                      <div class="ui large list">
+                          <div class="item">
+                              <div class="content">
+                                  <div class="header">
+                                    <table>
+                                      <tr>
+                                        <td width="100">Name:</td>
+                                        <td>{{$s.Name}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Endpoint:</td>
+                                        <td>{{$s.Domain}}:{{$s.Port}}</td>
+                                      </tr>
+                                    </table>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+        </div>
+        <div class="ui two stackable cards">
+              {{else}}
+              <div class="show-profile card">
+                  <div class="content">
+                      <div class="header">
+                          <!-- <i class="exchange icon"></i>
+                          {{$s.Type}}
+                          {{$s.Public_Key_Trim}}...
+                          <br> -->
+                          {{range $i, $p := $.Profiles}}
+                            {{if eq $s.Public_Key $p.Public_Key}}
+                              <i class="exchange icon"></i>
+                              Peer {{$p.Name}}
+                            {{end}}
+                            {{else}}
+                          {{end}}
+                      </div>
+                  </div>
+                  <div class="extra lcontent">
+                      <div class="ui large list">
+                          <div class="item">
+                              <div class="content">
+                                  <div class="header">
+                                    <table>
+                                      <tr>
+                                        <td width="150">Latest handshake:</td>
+                                        <td>{{$s.Latest_handshake}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Received:</td>
+                                        <td>{{$s.Transfer_rx}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Sent:</td>
+                                        <td>{{$s.Transfer_tx}}</td>
+                                      </tr>
+                                      <!-- <tr>
+                                        <td>Public Key:</td>
+                                        <td>{{$s.Public_Key}}</td>
+                                      </tr> -->
+                                      <tr>
+                                        <td>Preshared Key:</td>
+                                        <td>{{$s.Preshared_Key}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Client Endpoint:</td>
+                                        <td>{{$s.ClientEndpoint}}</td>
+                                      </tr>
+                                      <tr>
+                                        <td>Allowed IPs:</td>
+                                        <td>
+                                      {{range $i, $a := $s.AllowedIPs}}
+                                        {{$a}}<br>
+                                      {{end}}
+                                        </td>
+                                      </tr>
+                                      {{if eq $s.Keepalive "off"}}
+                                        <tr>
+                                          <td>Keepalive:</td>
+                                          <td>Keepalive is {{$s.Keepalive}}</td>
+                                        </tr>
+                                      {{else}}
+                                        <tr>
+                                          <td>Keepalive:</td>
+                                          <td>Every {{$s.Keepalive}} seconds</td>
+                                        </tr>
+                                      {{end}}
+                                    </table>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              {{end}}
+          {{end}}
+        </div>
       {{end}}
     </div>
 </div>

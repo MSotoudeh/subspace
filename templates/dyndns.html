@@ -1,0 +1,83 @@
+{{template "header.html" .}}
+
+<div class="ui container">
+  {{with $success := $.Request.FormValue "success"}}
+      <div class="ui info message">
+          <div class="header">
+              {{if eq $success "update_dyndns"}}
+                  OK! DynDNS updated successfully.
+                  New IP is: {{$.DynDNS.IP}}
+              {{else if eq $success "install_dyndns"}}
+                  OK! DynDNS will be updated every 6 hours.
+                  Log can be found at: /tmp/dyndns.log
+              {{end}}
+          </div>
+          <a class="close-link" href="/"><i class="close icon"></i></a>
+      </div>
+  {{end}}
+  {{with $error := $.Request.FormValue "error"}}
+      <div class="ui large negative message">
+          <div class="content">
+              <div class="header">
+                  {{if eq $error "cannotupdate"}}
+                      KO! DynDNS update failed!
+                  {{else}}
+                      {{$error}}
+                  {{end}}
+              </div>
+              <a class="close-link" href="/"><i class="close icon"></i></a>
+          </div>
+      </div>
+      <div class="ui hidden divider"></div>
+  {{end}}
+  <div class="ui padded segment">
+    <div class="ui huge black dividing header">
+        DynDNS
+    </div>
+    <div class="ui hidden divider"></div>
+      {{if $.DynDNS.Domain}}
+      <div class="ui one stackable cards">
+          <div class="show-profile card">
+              <div class="content">
+                  <div class="header">
+                      {{$.DynDNS.Domain}}
+                  </div>
+              </div>
+              <div class="extra lcontent">
+                  <div class="ui large list">
+                      <div class="item">
+                          <div class="content">
+                              <div class="header">
+                                <ul>DuckDNS Domain: {{$.DynDNS.Domain}}</ul>
+                                <ul>DuckDNS Token: {{$.DynDNS.Token}}</ul>
+                                <ul>Current IP: {{$.DynDNS.IP}}</ul>
+                                <ul>DynDNS IP: {{$.DynDNS.DynIP}}</ul>
+                                <ul>Command to install as a service to run every 6 hours:</ul>
+                                <ul>echo $(/usr/bin/crontab -l | { /bin/cat; echo "0 6 * * * /usr/bin/curl -s https://www.duckdns.org/update?domains={{$.DynDNS.Domain}}&token={{$.DynDNS.Token}}&ip="; } | /usr/bin/crontab - )</ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              <div class="extra content">
+                <div class="two ui buttons">
+                  <a href="/dyndns/update" class="ui large basic black fluid button">Update</a>
+                  <a href="/dyndns/install" class="ui large basic black fluid button">Install Cron</a>
+                </div>
+              </div>
+          </div>
+      </div>
+      {{else}}
+      <div class="ui large negative message">
+          <div class="content">
+              <div class="header">
+                Please enter information first, under: <a class="link-color" href="/dyndnssettings">DynDNS Settings</a>
+              </div>
+              <a class="close-link" href="/"><i class="close icon"></i></a>
+          </div>
+      </div>
+      {{end}}
+    </div>
+</div>
+
+{{template "footer.html" .}}

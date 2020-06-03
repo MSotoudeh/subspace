@@ -1,0 +1,93 @@
+{{template "header.html" .}}
+
+<div class="ui hidden divider"></div>
+
+<div class="ui container">
+    <div class="ui padded segment">
+        <div class="ui huge black dividing header">Server Settings</div>
+        <div class="ui hidden divider"></div>
+
+        {{with $error := .Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else if eq $error "emptywrongtype"}}
+                            Please check that no field is empty, and that types are correct
+                        {{else}}
+                            Error. Please try again.
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        <form class="ui huge form" action="/server/settings" method="POST" novalidate autocomplete="off">
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">IP Address</div>
+                    <input name="ip_address" type="text" placeholder="IP Address" value="{{$.Info.Server.IP_Address}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Port</div>
+                    <input name="port" type="text" placeholder="Port" value="{{$.Info.Server.Port}}">
+                </div>
+            </div>
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">Network Adapter</div>
+                    <input name="network_adapter" type="text" placeholder="Network Adapter" value="{{$.Info.Server.Network_Adapter}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Virtual IP Address</div>
+                    <input name="virtual_ip_address" type="text" placeholder="Virtual IP Address" value="{{$.Info.Server.Virtual_IP_Address}}">
+                </div>
+            </div>
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">CIDR</div>
+                    <input name="cidr" type="text" placeholder="CIDR" value="{{$.Info.Server.CIDR}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">DNS</div>
+                    <input name="dns" type="text" placeholder="DNS" value="{{$.Info.Server.DNS}}">
+                </div>
+            </div>
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">Public Key</div>
+                    <input name="public_key" type="text" placeholder="Public Key" value="{{$.Info.Server.Public_Key}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Config Path</div>
+                    <input name="config_path" type="text" placeholder="Config Path" value="{{$.Info.Server.Config_Path}}">
+                </div>
+            </div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <button type="submit" class="ui huge fluid black button">Save Server Settings</button>
+                </div>
+            </div>
+        </form>
+        <form class="ui huge form" action="/server/restart" method="POST" novalidate autocomplete="off">
+            <div class="two fields">
+                <div class="field">
+                    <div class="ui small header">IP Address</div>
+                    <input name="ip_address" type="text" placeholder="IP Address" value="{{$.Info.Server.IP_Address}}">
+                </div>
+                <div class="field">
+                    <div class="ui small header">Port</div>
+                    <input name="port" type="text" placeholder="Port" value="{{$.Info.Server.Port}}">
+                </div>
+            </div>
+            <button type="submit" class="ui huge fluid black button">Save and Restart Server</button>
+        </form>
+    </div>
+
+</div>
+
+{{template "footer.html" .}}
