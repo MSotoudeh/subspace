@@ -127,8 +127,9 @@ echo -e "${LIGHTBLUE}> Load modules ${NC}"
 echo -e "${LIGHTBLUE}> Enable IP forwarding ${NC}"
 # Enable IP forwarding
 printf ${WHITE}
-echo ">> "$(/sbin/sysctl -w net.ipv4.ip_forward=1)
-echo ">> "$(/sbin/sysctl -w net.ipv6.conf.all.forwarding=1)
+sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sed -i 's/#net.ipv6.conf.all.forwarding=1/net.ipv6.conf.all.forwarding=1/' /etc/sysctl.conf
+echo ">> "$(/sbin/sysctl -p)
 
 echo -e "${LIGHTBLUE}> Enable IPV4 firewall forwarding rules ${NC}"
 # # Enable IP forwarding
