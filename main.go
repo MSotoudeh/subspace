@@ -1,25 +1,28 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"time"
-
-	"context"
-	"crypto/rand"
-	"crypto/tls"
-
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/crewjam/saml"
+	"github.com/crewjam/saml/samlsp"
 	"github.com/gorilla/securecookie"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -33,14 +36,13 @@ var (
 	// The version is set by the build command.
 	version string
 
-	// FQDN
-	httpHost string
+	// httpd
+	httpAddr   string
+	httpHost   string
+	httpPrefix string
 
-	// FQDN
-	httpsHost string
-
-	// HTTP or HTTPS
-	server_type string
+	// Insecure http cookies (only recommended for internal LANs/VPNs)
+	httpInsecure bool
 
 	// backlink
 	backlink string
@@ -54,8 +56,8 @@ var (
 	// debug logging
 	debug bool
 
-	// HTTP read limit
-	httpReadLimit int64 = 2 * (1024 * 1024)
+	// Let's Encrypt
+	letsencrypt bool
 
 	// securetoken
 	securetoken *securecookie.SecureCookie
@@ -69,15 +71,20 @@ var (
 	// mailer
 	mailer = NewMailer()
 
+	// SAML
+	samlSP *samlsp.Middleware
+
 	// Error page HTML
 	errorPageHTML = `<html><head><title>Error</title></head><body text="orangered" bgcolor="black"><h1>An error has occurred</h1></body></html>`
 )
 
 func init() {
-	cli.StringVar(&datadir, "datadir", "/etc/wireguard", "data dir")
+	cli.StringVar(&datadir, "datadir", "/data", "data dir")
 	cli.StringVar(&backlink, "backlink", "", "backlink (optional)")
 	cli.StringVar(&httpHost, "http-host", "", "HTTP host")
-	cli.StringVar(&httpsHost, "https-host", "", "HTTPS host")
+	cli.StringVar(&httpAddr, "http-addr", ":80", "HTTP listen address")
+	cli.BoolVar(&httpInsecure, "http-insecure", false, "enable sessions cookies for http (no https) not recommended")
+	cli.BoolVar(&letsencrypt, "letsencrypt", true, "enable TLS using Let's Encrypt on port 443")
 	cli.BoolVar(&showVersion, "version", false, "display version and exit")
 	cli.BoolVar(&showHelp, "help", false, "display help and exit")
 	cli.BoolVar(&debug, "debug", false, "debug mode")
@@ -89,10 +96,9 @@ func main() {
 	cli.Parse(os.Args[1:])
 	usage := func(msg string) {
 		if msg != "" {
-			fmt.Fprintf(os.Stderr, "\nERROR: %s\n", msg)
+			fmt.Fprintf(os.Stderr, "ERROR: %s\n", msg)
 		}
-		fmt.Fprintf(os.Stderr, "\nUsage: \n%s --http-host subspace.example.com or", os.Args[0])
-		fmt.Fprintf(os.Stderr, "\n%s --https-host subspace.example.com\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s --http-host subspace.example.com\n\n", os.Args[0])
 		cli.PrintDefaults()
 	}
 
@@ -107,14 +113,8 @@ func main() {
 	}
 
 	// http host
-	if httpHost == "" && httpsHost == "" {
-		usage("the --http-host or --https-host flag is required")
-		os.Exit(1)
-	}
-
-	// http host
-	if httpHost != "" && httpsHost != "" {
-		usage("only one can be used, either --http-host or --https-host")
+	if httpHost == "" {
+		usage("--http-host flag is required")
 		os.Exit(1)
 	}
 
@@ -125,6 +125,15 @@ func main() {
 	}
 	logger.Debugf("debug logging is enabled")
 
+	// http port
+	httpIP, httpPort, err := net.SplitHostPort(httpAddr)
+	if err != nil {
+		usage("invalid --http-addr: " + err.Error())
+	}
+
+	// Clean datadir path.
+	datadir = filepath.Clean(datadir)
+
 	// config
 	config, err = NewConfig("config/config.json")
 	if err != nil {
@@ -134,25 +143,12 @@ func main() {
 	// Secure token
 	securetoken = securecookie.New([]byte(config.FindInfo().HashKey), []byte(config.FindInfo().BlockKey))
 
-	// http host
-	if httpHost != "" && httpsHost == "" {
-		server_type = "http"
-		http_server(server_type)
+	// Configure SAML if metadata is present.
+	if len(config.FindInfo().SAML.IDPMetadata) > 0 {
+		if err := configureSAML(); err != nil {
+			logger.Warnf("configuring SAML failed: %s", err)
+		}
 	}
-
-	// https host
-	if httpHost == "" && httpsHost != "" {
-		server_type = "https"
-		https_server(server_type)
-	}
-
-}
-
-func http_server(server_type string) {
-
-	//
-	// HTTP Server
-	//
 
 	//
 	// Routes
@@ -160,91 +156,18 @@ func http_server(server_type string) {
 	r := &httprouter.Router{}
 	r.GET("/", Log(WebHandler(indexHandler, "index")))
 	r.GET("/status", Log(WebHandler(statusHandler, "status")))
-	r.GET("/dyndns", Log(WebHandler(dyndnsHandler, "dyndns")))
-	r.GET("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
-	r.POST("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
-	r.GET("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
-	r.POST("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
 	r.GET("/help", Log(WebHandler(helpHandler, "help")))
 	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))
 	r.GET("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
 	r.POST("/configureserver", Log(WebHandler(configureserverHandler, "configureserver")))
 
-	r.GET("/signin", Log(WebHandler(signinHandler, "signin")))
-	r.GET("/signout", Log(WebHandler(signoutHandler, "signout")))
-	r.POST("/signin", Log(WebHandler(signinHandler, "signin")))
-	r.GET("/forgot", Log(WebHandler(forgotHandler, "forgot")))
-	r.POST("/forgot", Log(WebHandler(forgotHandler, "forgot")))
-
-	r.GET("/server/settings", Log(WebHandler(serversettingsHandler, "serversettings")))
-	r.POST("/server/settings", Log(WebHandler(serversettingsHandler, "serversettings")))
-	r.GET("/server/restart", Log(WebHandler(restartServerHandler, "serverrestart")))
-	r.POST("/server/restart", Log(WebHandler(restartServerHandler, "serverrestart")))
-	r.GET("/settings", Log(WebHandler(settingsHandler, "settings")))
-	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
-	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
-	r.POST("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
-	r.GET("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
-	r.POST("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
-	r.GET("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
-	r.POST("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
-	r.GET("/profiles/connect/:profile", Log(WebHandler(connectProfileHandler, "profiles/connect")))
-	r.GET("/profiles/delete/:profile", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
-	r.POST("/profiles/delete", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
-	r.GET("/profiles/config/wireguard/:profile", Log(WebHandler(wireguardConfigHandler, "profiles/config/wireguard")))
-	r.GET("/profiles/png/wireguard/:profile", Log(WebHandler(wireguardPNGHandler, "profiles/png/wireguard")))
-	r.GET("/static/*path", staticHandler)
-
-	logger.Infof("Subspace version: %s", version)
-
-	httpTimeout := 10 * time.Minute
-	maxHeaderBytes := 10 * (1024 * 1024)
-
-	httpd := &http.Server{
-		Handler:        r,
-		Addr:           ":80",
-		WriteTimeout:   httpTimeout,
-		ReadTimeout:    httpTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
-	}
-
-	// Enable TCP keep alives on the TLS connection.
-	tcpListener, err := net.Listen("tcp", ":80")
-	if err != nil {
-		logger.Fatalf("listen failed: %s", err)
-		return
-	}
-
-	logger.Infof("Subspace version: %s %s", version, &url.URL{
-		Scheme: "http",
-		Host:   httpHost,
-		Path:   "/",
-	})
-	logger.Fatal(httpd.Serve(tcpListener))
-	return
-}
-
-func https_server(server_type string) {
-
-	//
-	// HTTPS Server
-	//
-
-	//
-	// Routes
-	//
-	r := &httprouter.Router{}
-	r.GET("/", Log(WebHandler(indexHandler, "index")))
-	r.GET("/status", Log(WebHandler(statusHandler, "status")))
-	r.GET("/dyndns", Log(WebHandler(dyndnsHandler, "dyndns")))
-	r.GET("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
-	r.POST("/dyndns/update", Log(WebHandler(UpdatedyndnsHandler, "dyndns/update")))
-	r.GET("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
-	r.POST("/dyndns/install", Log(WebHandler(InstalldyndnsServiceHandler, "dyndns/install")))
-	r.GET("/help", Log(WebHandler(helpHandler, "help")))
-	r.GET("/configure", Log(WebHandler(configureHandler, "configure")))
-	r.POST("/configure", Log(WebHandler(configureHandler, "configure")))
+	// SAML
+	r.GET("/sso", Log(ssoHandler))
+	r.GET("/saml/metadata", Log(samlHandler))
+	r.POST("/saml/metadata", Log(samlHandler))
+	r.GET("/saml/acs", Log(samlHandler))
+	r.POST("/saml/acs", Log(samlHandler))
 
 	r.GET("/signin", Log(WebHandler(signinHandler, "signin")))
 	r.GET("/signout", Log(WebHandler(signoutHandler, "signout")))
@@ -256,21 +179,51 @@ func https_server(server_type string) {
 	r.POST("/settings", Log(WebHandler(settingsHandler, "settings")))
 	r.GET("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
 	r.POST("/emailsettings", Log(WebHandler(emailsettingsHandler, "emailsettings")))
-	r.GET("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
-	r.POST("/dyndnssettings", Log(WebHandler(dyndnssettingsHandler, "dyndnssettings")))
-	r.GET("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
-	r.POST("/profiles/add", Log(WebHandler(addProfileHandler, "profiles/add")))
-	r.GET("/profiles/connect/:profile", Log(WebHandler(connectProfileHandler, "profiles/connect")))
-	r.GET("/profiles/delete/:profile", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
-	r.POST("/profiles/delete", Log(WebHandler(deleteProfileHandler, "profiles/delete")))
-	r.GET("/profiles/config/wireguard/:profile", Log(WebHandler(wireguardConfigHandler, "profiles/config/wireguard")))
-	r.GET("/profiles/png/wireguard/:profile", Log(WebHandler(wireguardPNGHandler, "profiles/png/wireguard")))
+
+	r.GET("/user/edit/:user", Log(WebHandler(userEditHandler, "user/edit")))
+	r.POST("/user/edit", Log(WebHandler(userEditHandler, "user/edit")))
+	r.GET("/user/delete/:user", Log(WebHandler(userDeleteHandler, "user/delete")))
+	r.POST("/user/delete", Log(WebHandler(userDeleteHandler, "user/delete")))
+
+	r.GET("/profile/add", Log(WebHandler(profileAddHandler, "profile/add")))
+	r.POST("/profile/add", Log(WebHandler(profileAddHandler, "profile/add")))
+	r.GET("/profile/connect/:profile", Log(WebHandler(profileConnectHandler, "profile/connect")))
+	r.GET("/profile/delete/:profile", Log(WebHandler(profileDeleteHandler, "profile/delete")))
+	r.POST("/profile/delete", Log(WebHandler(profileDeleteHandler, "profile/delete")))
+	r.GET("/profile/config/wireguard/:profile", Log(WebHandler(wireguardConfigHandler, "profile/config/wireguard")))
+	r.GET("/profile/qrconfig/wireguard/:profile", Log(WebHandler(wireguardQRConfigHandler, "profile/qrconfig/wireguard")))
+	r.GET("/profile/png/wireguard/:profile", Log(WebHandler(wireguardPNGHandler, "profile/png/wireguard")))
 	r.GET("/static/*path", staticHandler)
 
-	logger.Infof("Subspace version: %s", version)
+	//
+	// Server
+	//
 
 	httpTimeout := 10 * time.Minute
 	maxHeaderBytes := 10 * (1024 * 1024)
+
+	// Plain text web server for use behind a reverse proxy.
+	if !letsencrypt {
+		httpd := &http.Server{
+			Handler:        r,
+			Addr:           net.JoinHostPort(httpIP, httpPort),
+			WriteTimeout:   httpTimeout,
+			ReadTimeout:    httpTimeout,
+			MaxHeaderBytes: maxHeaderBytes,
+		}
+		hostport := net.JoinHostPort(httpHost, httpPort)
+		if httpPort == "80" {
+			hostport = httpHost
+		}
+		logger.Infof("Subspace version: %s %s", version, &url.URL{
+			Scheme: "http",
+			Host:   hostport,
+			Path:   httpPrefix,
+		})
+		logger.Fatal(httpd.ListenAndServe())
+	}
+
+	// Let's Encrypt TLS mode
 
 	// autocert
 	certmanager := autocert.Manager{
@@ -278,7 +231,7 @@ func https_server(server_type string) {
 		Cache:  autocert.DirCache(filepath.Join(datadir, "letsencrypt")),
 		HostPolicy: func(_ context.Context, host string) error {
 			host = strings.TrimPrefix(host, "www.")
-			if host == httpsHost {
+			if host == httpHost {
 				return nil
 			}
 			if host == config.FindInfo().Domain {
@@ -293,13 +246,13 @@ func https_server(server_type string) {
 		redir := httprouter.New()
 		redir.GET("/*path", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 			r.URL.Scheme = "https"
-			r.URL.Host = httpsHost
+			r.URL.Host = httpHost
 			http.Redirect(w, r, r.URL.String(), http.StatusFound)
 		})
 
 		httpd := &http.Server{
 			Handler:        certmanager.HTTPHandler(redir),
-			Addr:           ":80",
+			Addr:           net.JoinHostPort(httpIP, "80"),
 			WriteTimeout:   httpTimeout,
 			ReadTimeout:    httpTimeout,
 			MaxHeaderBytes: maxHeaderBytes,
@@ -327,29 +280,38 @@ func https_server(server_type string) {
 		},
 	}
 
+	// Override default for TLS.
+	if httpPort == "80" {
+		httpPort = "443"
+		httpAddr = net.JoinHostPort(httpIP, httpPort)
+	}
+
 	httpsd := &http.Server{
 		Handler:        r,
-		Addr:           ":443",
+		Addr:           httpAddr,
 		WriteTimeout:   httpTimeout,
 		ReadTimeout:    httpTimeout,
 		MaxHeaderBytes: maxHeaderBytes,
 	}
 
 	// Enable TCP keep alives on the TLS connection.
-	tcpListener, err := net.Listen("tcp", ":443")
+	tcpListener, err := net.Listen("tcp", httpAddr)
 	if err != nil {
 		logger.Fatalf("listen failed: %s", err)
 		return
 	}
 	tlsListener := tls.NewListener(tcpKeepAliveListener{tcpListener.(*net.TCPListener)}, &tlsConfig)
 
+	hostport := net.JoinHostPort(httpHost, httpPort)
+	if httpPort == "443" {
+		hostport = httpHost
+	}
 	logger.Infof("Subspace version: %s %s", version, &url.URL{
 		Scheme: "https",
-		Host:   httpsHost,
+		Host:   hostport,
 		Path:   "/",
 	})
 	logger.Fatal(httpsd.Serve(tlsListener))
-	return
 }
 
 type tcpKeepAliveListener struct {
@@ -364,4 +326,72 @@ func (l tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 	tc.SetKeepAlive(true)
 	tc.SetKeepAlivePeriod(10 * time.Minute)
 	return tc, nil
+}
+
+func configureSAML() error {
+	info := config.FindInfo()
+
+	if len(info.SAML.IDPMetadata) == 0 {
+		return fmt.Errorf("no IDP metadata")
+	}
+	entity := &saml.EntityDescriptor{}
+	err := xml.Unmarshal([]byte(info.SAML.IDPMetadata), entity)
+
+	if err != nil && err.Error() == "expected element type <EntityDescriptor> but have <EntitiesDescriptor>" {
+		entities := &saml.EntitiesDescriptor{}
+		if err := xml.Unmarshal([]byte(info.SAML.IDPMetadata), entities); err != nil {
+			return err
+		}
+
+		err = fmt.Errorf("no entity found with IDPSSODescriptor")
+		for i, e := range entities.EntityDescriptors {
+			if len(e.IDPSSODescriptors) > 0 {
+				entity = &entities.EntityDescriptors[i]
+				err = nil
+			}
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	keyPair, err := tls.X509KeyPair(info.SAML.Certificate, info.SAML.PrivateKey)
+	if err != nil {
+		return fmt.Errorf("failed to load SAML keypair: %s", err)
+	}
+
+	keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+	if err != nil {
+		return fmt.Errorf("failed to parse SAML certificate: %s", err)
+	}
+
+	rootURL := url.URL{
+		Scheme: "https",
+		Host:   httpHost,
+		Path:   "/",
+	}
+
+	if httpInsecure {
+		rootURL.Scheme = "http"
+	}
+
+	newsp, err := samlsp.New(samlsp.Options{
+		URL:               rootURL,
+		Key:               keyPair.PrivateKey.(*rsa.PrivateKey),
+		Certificate:       keyPair.Leaf,
+		IDPMetadata:       entity,
+		CookieName:        SessionCookieNameSSO,
+		CookieDomain:      httpHost, // TODO: this will break if using a custom domain.
+		CookieSecure:      !httpInsecure,
+		Logger:            logger,
+		AllowIDPInitiated: true,
+	})
+	if err != nil {
+		logger.Warnf("failed to configure SAML: %s", err)
+		samlSP = nil
+		return fmt.Errorf("failed to configure SAML: %s", err)
+	}
+	samlSP = newsp
+	logger.Infof("successfully configured SAML")
+	return nil
 }

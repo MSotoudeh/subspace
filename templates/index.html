@@ -3,20 +3,16 @@
 <div class="ui container">
 
     {{with $success := $.Request.FormValue "success"}}
-        <div class="ui info message">
+        <div class="ui large info message">
             <div class="header">
                 {{if eq $success "settings"}}
                     Settings saved successfully
-                {{else if eq $success "removeprofile"}}
-                    Device removed successfully
+                {{else if eq $success "deleteprofile"}}
+                    Device deleted successfully
                 {{else if eq $success "emailsettings"}}
                     Email settings saved successfully
-                {{else if eq $success "dyndnssettings"}}
-                    DynDNS settings saved successfully
-                {{else if eq $success "serversettings"}}
-                    Server settings saved successfully
-                {{else if eq $success "restartserver"}}
-                    Updated Domain:Port to {{$.Info.Server.IP_Address}}:{{$.Info.Server.Port}}
+                {{else if eq $success "deleteuser"}}
+                    User deleted successfully
                 {{end}}
             </div>
             <a class="close-link" href="/"><i class="close icon"></i></a>
@@ -28,8 +24,8 @@
                 <div class="header">
                     {{if eq $error "addprofile"}}
                         Adding device failed
-                    {{else if eq $error "removeprofile"}}
-                        Removing device failed
+                    {{else if eq $error "deleteprofile"}}
+                        Adding device failed
                     {{else if eq $error "profilename"}}
                         Device name is required
                     {{else}}
@@ -53,23 +49,38 @@
                 <div class="ui hidden divider"></div>
             </div>
             <div class="column">
-                <form class="ui huge form" action="/profiles/add" method="POST">
+                <form class="ui huge form" action="/profile/add" method="POST">
                     <div class="field">
-                        <input name="name" type="text" value="{{$.Request.FormValue "name"}}" placeholder="Device Name" autofocus>
+                        <input name="name" type="text" value="{{$.Request.FormValue "name"}}" placeholder="Device name" autofocus>
                     </div>
-                    <div class="field">
-                        <div class="ui equal width grid">
-                            <div class="column">
+                    {{if $.User.Admin}}
+                      <div class="ui equal width fields">
+                        <div class="field">
+                            <div id="add-profile-admin" class="ui fluid selection dropdown">
+                                <input type="hidden" name="admin" value="no">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">Select account</div>
+                                <div class="menu">
+                                    <div class="item" data-value="no"><i class="grey user icon"></i>Your device</div>
+                                    <div class="item" data-value="yes"><i class="grey laptop icon"></i>Admin device</div>
+                                </div>
+                            </div>
+                        </div>
+                    {{end}}
+                        <div class="field">
+                          <div class="ui equal width grid">
+                              <div class="column">
                                 <div id="add-profile-platform" class="ui fluid selection dropdown">
-                                    <input type="hidden" name="platform">
+                                    <input type="hidden" name="platform" value="yes">
                                     <i class="dropdown icon"></i>
                                     <div class="default text">Select platform</div>
                                     <div class="menu">
-                                        <div class="item" data-value="windows"><i class="black windows icon"></i>Windows</div>
-                                        <div class="item" data-value="osx"><i class="black apple icon"></i>Mac OS X</div>
-                                        <div class="item" data-value="ios"><i class="black apple icon"></i>iOS</div>
-                                        <div class="item" data-value="android"><i class="black android icon"></i>Android</div>
-                                        <div class="item" data-value="other"><i class="black asterisk dot icon"></i>Other</div>
+                                        <div class="item" data-value="windows"><i class="windows icon"></i>Windows</div>
+                                        <div class="item" data-value="osx"><i class="apple icon"></i>macOS</div>
+                                        <div class="item" data-value="ios"><i class="apple icon"></i>iOS</div>
+                                        <div class="item" data-value="android"><i class="android icon"></i>Android</div>
+                                        <div class="item" data-value="linux"><i class="linux icon"></i>Linux</div>
+                                        <div class="item" data-value="other"><i class="asterisk dot icon"></i>Other</div>
                                     </div>
                                 </div>
                             </div>
@@ -84,8 +95,11 @@
                                     </div>
                                 </div>
                             </div>
+                          </div>
                         </div>
-                    </div>
+                    {{if $.User.Admin}}
+                      </div>
+                    {{end}}
                     <div class="field">
                         <button type="submit" class="ui huge black fluid button">Add device</button>
                     </div>
@@ -96,78 +110,227 @@
 
     <div class="ui hidden divider"></div>
 
-    {{if $.Profiles}}
+    {{if $.User.ID}}
+        <div class="ui hidden divider"></div>
         <div class="ui padded segment">
             <div class="ui huge black dividing header">
-                Devices
+                Your devices
             </div>
             <div class="ui hidden divider"></div>
 
-            <!-- <div class="ui one stackable cards"> -->
+            {{if $.TargetProfiles}}
+                <div class="ui three stackable cards">
+                    {{range $n, $p := $.TargetProfiles}}
+                        <div class="showcard card">
+                            <a href="/profile/delete/{{$p.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
+                            <div class="content">
+                                <div class="header">
+                                    <i class="large grey
+                                    {{if eq $p.Platform "windows"}}
+                                        windows
+                                    {{else if eq $p.Platform "osx"}}
+                                        apple
+                                    {{else if eq $p.Platform "ios"}}
+                                        apple
+                                    {{else if eq $p.Platform "android"}}
+                                        android
+                                    {{else if eq $p.Platform "linux"}}
+                                        linux
+                                    {{else}}
+                                        asterisk
+                                    {{end}}
+                                        icon"></i> {{$p.Name}}
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                <div class="ui large list">
+                                    <div class="item">
+                                        <i class="bordered calendar icon"></i>
+                                        <div class="content">
+                                            <div class="header">
+                                                Created
+                                            </div>
+                                            <div class="description" title="{{$p.Created}}">
+                                                {{time $p.Created}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="item">
+                                        <i class="exchange icon"></i>
+                                        <div class="content">
+                                            <div class="header">
+                                                Routing: {{$p.Routing}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                              <div class="ui three buttons">
+                                <a href="/profile/connect/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Connect" data-inverted="">
+                                  <i class="desktop icon"></i>
+                                </a>
+                                <a href="/profile/config/wireguard/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Download" data-inverted="">
+                                    <i class="save icon"></i>
+                                </a>
+                                <div id="qr{{$p.Number}}" class="modal">
+                                        <div class="ui header">
+                                                QR Code for {{$p.Name}}:
+                                        </div>
+                                        <div class="image content">
+                                            <div class="ui medium image">
+                                            <img src="/profile/png/wireguard/{{$p.ID}}">
+                                            </div>
+                                        </div>
+                                </div>
+                                <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button" data-tooltip="QR Code" data-inverted="">
+                                    <i class="qr code icon"></i>
+                                </a>
+                            </div>
+                        </div>
+                      </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <div class="ui large center aligned grey header">There are currently no devices</div>
+            {{end}}
+        </div>
+    {{end}}
+
+
+    {{if $.Admin}}
+        <div class="ui hidden divider"></div>
+        <div class="ui padded segment">
+            <div class="ui huge black dividing header">
+                Admin devices
+            </div>
+            <div class="ui hidden divider"></div>
+
+            {{if $.Profiles}}
+                <div class="ui three stackable cards">
+                    {{range $n, $p := $.Profiles}}
+                        <div class="showcard card">
+                            <a href="/profile/delete/{{$p.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
+                            <div class="content">
+                                <div class="header">
+                                    <i class="large
+                                    {{if eq $p.Platform "windows"}}
+                                        windows
+                                    {{else if eq $p.Platform "osx"}}
+                                        apple
+                                    {{else if eq $p.Platform "ios"}}
+                                        apple
+                                    {{else if eq $p.Platform "android"}}
+                                        android
+                                    {{else if eq $p.Platform "linux"}}
+                                        linux
+                                    {{else}}
+                                        asterisk
+                                    {{end}}
+                                        icon"></i> {{$p.Name}}
+                                </div>
+                            </div>
+                            <div class="extra content">
+                              <div class="ui large list">
+                                  <div class="item">
+                                      <i class="bordered calendar icon"></i>
+                                      <div class="content">
+                                          <div class="header">
+                                              Created
+                                          </div>
+                                          <div class="description" title="{{$p.Created}}">
+                                              {{time $p.Created}}
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div class="item">
+                                      <i class="exchange icon"></i>
+                                      <div class="content">
+                                          <div class="header">
+                                              Routing: {{$p.Routing}}
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                            </div>
+                            <div class="extra content">
+                              <div class="ui three buttons">
+                                <a href="/profile/connect/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Connect" data-inverted="">
+                                  <i class="desktop icon"></i>
+                                </a>
+                                <a href="/profile/config/wireguard/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Download" data-inverted="">
+                                    <i class="save icon"></i>
+                                </a>
+                                <div id="qr{{$p.Number}}" class="modal">
+                                        <div class="ui header">
+                                                QR Code for {{$p.Name}}:
+                                        </div>
+                                        <div class="image content">
+                                            <div class="ui medium image">
+                                            <img src="/profile/png/wireguard/{{$p.ID}}">
+                                            </div>
+                                        </div>
+                                </div>
+                                <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button" data-tooltip="QR Code" data-inverted="">
+                                    <i class="qr code icon"></i>
+                                </a>
+                            </div>
+                          </div>
+                        </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <div class="ui large center aligned header">There are currently no devices</div>
+            {{end}}
+        </div>
+    {{end}}
+
+    {{if $.Users}}
+        <div class="ui hidden divider"></div>
+        <div class="ui padded segment">
+            <div class="ui huge black dividing header">
+                Single sign-on users
+            </div>
+            <div class="ui hidden divider"></div>
+
             <div class="ui three stackable cards">
-                {{range $n, $p := $.Profiles}}
-                    <div class="show-profile card">
-                        <a href="/profiles/delete/{{$p.ID}}" class="ui right corner label"><i class="trash alternate icon"></i></a>
-                        <!-- <a href="/profiles/edit/{{$p.ID}}" class="ui right attached corner label"><i class="trash alternate icon"></i></a> -->
+                {{range $n, $u := $.Users}}
+                    <div class="showcard card">
+                        <a href="/user/delete/{{$u.ID}}" class="ui right corner label "><i class="trash alternate icon"></i></a>
                         <div class="content">
                             <div class="header">
-                                <i class="large
-                                {{if eq $p.Platform "windows"}}
-                                    windows
-                                {{else if eq $p.Platform "osx"}}
-                                    apple
-                                {{else if eq $p.Platform "ios"}}
-                                    apple
-                                {{else if eq $p.Platform "android"}}
-                                    android
-                                {{else}}
-                                    asterisk
-                                {{end}}
-                                    icon"></i> {{$p.Name}}
+                                <i class="large grey user icon"></i>
+                                {{$u.Email}}
                             </div>
                         </div>
                         <div class="extra content">
                             <div class="ui large list">
                                 <div class="item">
-                                    <i class="calendar icon"></i>
+                                    <i class="bordered laptop icon"></i>
                                     <div class="content">
                                         <div class="header">
-                                            Added {{time $p.Created}}
+                                            Devices
+                                        </div>
+                                        <div class="description">
+                                            {{len $u.Profiles}} devices
                                         </div>
                                     </div>
                                 </div>
                                 <div class="item">
-                                    <i class="exchange icon"></i>
+                                    <i class="bordered calendar icon"></i>
                                     <div class="content">
                                         <div class="header">
-                                            Routing: {{$p.Routing}}
+                                            Created
+                                        </div>
+                                        <div class="description" title="{{$u.Created}}">
+                                            {{time $u.Created}}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="extra content">
-                            <div class="ui three buttons">
-                            <a href="/profiles/connect/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Connect" data-inverted="">
-                                <i class="desktop icon"></i>
-                            </a>
-                            <a href="/profiles/config/wireguard/{{$p.ID}}" class="ui large black fluid button" data-tooltip="Download" data-inverted="">
-                                <i class="save icon"></i>
-                            </a>
-                            <div id="qr{{$p.Number}}" class="modal">
-                                    <div class="ui header">
-                                            QR Code for {{$p.Name}}:
-                                    </div>
-                                    <div class="image content">
-                                        <div class="ui medium image">
-                                        <img src="/profiles/png/wireguard/{{$p.ID}}">
-                                        </div>
-                                    </div>
-                            </div>
-                            <a href="#qr{{$p.Number}}" rel="modal:open" class="ui large black fluid button" data-tooltip="QR Code" data-inverted="">
-                                <i class="qr code icon"></i>
-                            </a>
-                            </div>
+                            <a href="/user/edit/{{$u.ID}}" class="ui large basic fluid button">Manage user</a>
                         </div>
                     </div>
                 {{end}}

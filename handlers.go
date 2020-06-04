@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -14,45 +13,74 @@ import (
 	"strings"
 	"time"
 
-	pipes "github.com/ebuchman/go-shell-pipes"
-	"github.com/jasonlvhit/gocron"
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
+
+	pipes "github.com/ebuchman/go-shell-pipes"
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 var (
-	validEmail    = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
-	validPassword = regexp.MustCompile(`^[ -~]{6,200}$`)
-	validString   = regexp.MustCompile(`^[ -~]{1,200}$`)
+	validEmail         = regexp.MustCompile(`^[ -~]+@[ -~]+$`)
+	validPassword      = regexp.MustCompile(`^[ -~]{6,200}$`)
+	validString        = regexp.MustCompile(`^[ -~]{1,200}$`)
+	maxProfiles        = 250
+	maxProfilesPerUser = 10
 )
 
-func wireguardConfigHandler(w *Web) {
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+func ssoHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	if token := samlSP.GetAuthorizationToken(r); token != nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	logger.Debugf("SSO: require account handler")
+	samlSP.RequireAccountHandler(w, r)
+}
+
+func samlHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	if samlSP == nil {
+		logger.Warnf("SAML is not configured")
+		http.NotFound(w, r)
+		return
+	}
+	logger.Debugf("SSO: samlSP.ServeHTTP")
+	samlSP.ServeHTTP(w, r)
+}
+
+func wireguardQRConfigHandler(w *Web) {
 	profile, err := config.FindProfile(w.ps.ByName("profile"))
 	if err != nil {
 		http.NotFound(w.w, w.r)
 		return
 	}
-
-	f, err := os.Open(profile.WireGuardConfigPath())
-	if err != nil {
-		logger.Warn(err)
-		Error(w.w, fmt.Errorf("config file error"))
+	if !w.Admin && profile.UserID != w.User.ID {
+		Error(w.w, fmt.Errorf("failed to view config: permission denied"))
 		return
 	}
 
-	stat, err := f.Stat()
+	b, err := ioutil.ReadFile(profile.WireGuardConfigPath())
 	if err != nil {
-		logger.Warn(err)
-		Error(w.w, fmt.Errorf("config file size error"))
+		Error(w.w, err)
 		return
 	}
 
-	w.w.Header().Set("Content-Disposition", "attachment; filename="+profile.WireGuardConfigName())
-	w.w.Header().Set("Content-Type", "application/x-wireguard-profile")
-	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
-	_, err = io.Copy(w.w, f)
+	img, err := qrcode.Encode(string(b), qrcode.Medium, 256)
 	if err != nil {
-		logger.Error(err)
-		Error(w.w, fmt.Errorf("config output error"))
+		Error(w.w, err)
+		return
+	}
+
+	w.w.Header().Set("Content-Type", "image/png")
+	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", len(img)))
+	if _, err := w.w.Write(img); err != nil {
+		Error(w.w, err)
 		return
 	}
 }
@@ -89,6 +117,32 @@ func wireguardPNGHandler(w *Web) {
 	}
 }
 
+func wireguardConfigHandler(w *Web) {
+	profile, err := config.FindProfile(w.ps.ByName("profile"))
+	if err != nil {
+		http.NotFound(w.w, w.r)
+		return
+	}
+	if !w.Admin && profile.UserID != w.User.ID {
+		Error(w.w, fmt.Errorf("failed to view config: permission denied"))
+		return
+	}
+
+	b, err := ioutil.ReadFile(profile.WireGuardConfigPath())
+	if err != nil {
+		Error(w.w, err)
+		return
+	}
+
+	w.w.Header().Set("Content-Disposition", "attachment; filename="+profile.WireGuardConfigName())
+	w.w.Header().Set("Content-Type", "application/x-wireguard-profile")
+	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", len(b)))
+	if _, err := w.w.Write(b); err != nil {
+		Error(w.w, err)
+		return
+	}
+}
+
 func configureHandler(w *Web) {
 	if config.FindInfo().Configured {
 		w.Redirect("/?error=configured")
@@ -103,7 +157,6 @@ func configureHandler(w *Web) {
 	email := strings.ToLower(strings.TrimSpace(w.r.FormValue("email")))
 	emailConfirm := strings.ToLower(strings.TrimSpace(w.r.FormValue("email_confirm")))
 	password := w.r.FormValue("password")
-	domain := httpHost
 
 	if !validEmail.MatchString(email) || !validPassword.MatchString(password) || email != emailConfirm {
 		w.Redirect("/configure?error=invalid")
@@ -118,18 +171,15 @@ func configureHandler(w *Web) {
 	config.UpdateInfo(func(i *Info) error {
 		i.Email = email
 		i.Password = hashedPassword
-		i.Domain = domain
 		i.Configured = true
 		return nil
 	})
 
-	sessionCookie, err := NewSessionCookie(w.r)
-	if err != nil {
-		panic(err)
+	if err := w.SigninSession(true, ""); err != nil {
+		Error(w.w, err)
+		return
 	}
-	http.SetCookie(w.w, sessionCookie)
-	w.Redirect("/")
-	return
+	w.Redirect("/settings?success=configured")
 }
 
 func forgotHandler(w *Web) {
@@ -198,17 +248,15 @@ func forgotHandler(w *Web) {
 		return nil
 	})
 
-	sessionCookie, err := NewSessionCookie(w.r)
-	if err != nil {
-		panic(err)
+	if err := w.SigninSession(true, ""); err != nil {
+		Error(w.w, err)
+		return
 	}
-	http.SetCookie(w.w, sessionCookie)
 	w.Redirect("/")
-	return
 }
 
 func signoutHandler(w *Web) {
-	http.SetCookie(w.w, NewDeletionCookie())
+	w.SignoutSession()
 	w.Redirect("/signin")
 }
 
@@ -230,106 +278,101 @@ func signinHandler(w *Web) {
 		w.Redirect("/signin?error=invalid")
 		return
 	}
-	sessionCookie, err := NewSessionCookie(w.r)
-	if err != nil {
-		panic(err)
+	if err := w.SigninSession(true, ""); err != nil {
+		Error(w.w, err)
+		return
 	}
-	http.SetCookie(w.w, sessionCookie)
 
 	w.Redirect("/")
 }
 
-func restartServerHandler(w *Web) {
-
-	// Store actual host and port to vars !!! only valid if matching the one in wg0.conf !!!
-	old_port := config.Info.Server.Port
-	old_host := config.Info.Server.IP_Address
-	_ = old_host
-	_ = old_port
-	old_str_port := strconv.Itoa(old_port)
-	_ = old_str_port
-
-	// Store new values from form to vars !!!! Empty as for is on previous page... Added fields... !!!!
-	new_port := w.r.FormValue("port")
-	new_host := w.r.FormValue("ip_address")
-	_ = new_host
-	_ = new_port
-	new_int_port, err := strconv.Atoi(new_port)
+func userEditHandler(w *Web) {
+	userID := w.ps.ByName("user")
+	if userID == "" {
+		userID = w.r.FormValue("user")
+	}
+	user, err := config.FindUser(userID)
 	if err != nil {
-		fmt.Println(err)
+		http.NotFound(w.w, w.r)
+		return
+	}
+	if !w.Admin {
+		Error(w.w, fmt.Errorf("failed to edit user: permission denied"))
+		return
 	}
 
-	// Shutdown the WG interface
-	wg_down, err := pipes.RunString("wg-quick down /etc/wireguard/server/wg0.conf")
-	_ = wg_down
-	fmt.Println(wg_down)
-	// change_server_port, err := pipes.RunString("sed -i 3s/{{$.old_port}}/{{$.new_port}}/g /etc/wireguard/server/wg0.conf")
-	// _ = change_server_port
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	if w.r.Method == "GET" {
+		w.TargetUser = user
+		w.Profiles = config.ListProfilesByUser(user.ID)
+		w.HTML()
+		return
+	}
 
-	//--------------------------------Working-----------------
-	// change_server_port := exec.Command("sed", "-i", "s/"+old_str_port+"/"+new_port+"/g", "/etc/wireguard/server/wg0.conf")
-	// _ = change_server_port
-	// err_chg := change_server_port.Run()
-	// if err_chg != nil {
-	// 	fmt.Printf("error is %s\n", err_chg)
-	// }
-	//--------------------------------
+	if w.User.ID == user.ID {
+		w.Redirect("/user/edit/%s", user.ID)
+		return
+	}
 
-	// fmt.Println(change_server_port)
+	admin := w.r.FormValue("admin") == "yes"
 
-	// change_clients_host_port := pipes.RunString("")
-
-	// server_port=$(sed = /etc/wireguard/server/wg0.conf | sed 'N;s/\n/ /' | grep "Lis" | grep -oE '[0-9]+$' | tail -n1)
-	// client_port_lines=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep "Endpoint " | cut -f1 -d' ')
-	// client_ports=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep Endpoint | cut -f2- -d: | cut -f2- -d, | cut -f1 -d' ')
-	// client_hosts=$(sed = /etc/wireguard/clients/*/*.conf | sed 'N;s/\n/ /' | grep "Endpoint =" | cut -f1 -d: | cut -f4 -d ' ')
-
-	// Update the new values in Server
-	config.UpdateInfo(func(i *Info) error {
-		i.Server.IP_Address = new_host
-		i.Server.Port = new_int_port
+	config.UpdateUser(user.ID, func(u *User) error {
+		u.Admin = admin
 		return nil
 	})
 
-	//Change server host and port
-	// 		`sed -i s/{{$.Old_Port}}/{{$.New_Port}}/g /etc/wireguard/server/wg0.conf`
-	script :=
-		`sed -i 's/.*ListenPort.*/ListenPort = {{$.New_Port}}/' /etc/wireguard/server/server.conf`
-	_, err = bash(script, struct {
-		Old_Port int
-		New_Port int
-	}{
-		old_port,
-		new_int_port,
-	})
-	if err != nil {
-		logger.Warn(err)
-		w.Redirect("/?error=changeserverport")
-		return
-	}
-
-	wg_service, err := pipes.RunString("/usr/local/etc/wg_service.sh")
-	_ = wg_service
-	fmt.Println(wg_service)
-
-	if err != nil {
-		logger.Warn(err)
-		w.Redirect("/?error=restartserver")
-		return
-	}
-
-	w.Redirect("/?success=restartserver")
+	w.Redirect("/user/edit/%s?success=edituser", user.ID)
 }
 
-func addProfileHandler(w *Web) {
+func userDeleteHandler(w *Web) {
+	userID := w.ps.ByName("user")
+	if userID == "" {
+		userID = w.r.FormValue("user")
+	}
+	user, err := config.FindUser(userID)
+	if err != nil {
+		http.NotFound(w.w, w.r)
+		return
+	}
+	if !w.Admin {
+		Error(w.w, fmt.Errorf("failed to delete user: permission denied"))
+		return
+	}
+	if w.User.ID == user.ID {
+		w.Redirect("/user/edit/%s?error=deleteuser", user.ID)
+		return
+	}
+
+	if w.r.Method == "GET" {
+		w.TargetUser = user
+		w.HTML()
+		return
+	}
+
+	for _, profile := range config.ListProfilesByUser(user.ID) {
+		if err := deleteProfile(profile); err != nil {
+			logger.Errorf("delete profile failed: %s", err)
+			w.Redirect("/profile/delete?error=deleteprofile")
+			return
+		}
+	}
+
+	if err := config.DeleteUser(user.ID); err != nil {
+		Error(w.w, err)
+		return
+	}
+	w.Redirect("/?success=deleteuser")
+}
+
+func profileAddHandler(w *Web) {
+	if !w.Admin && w.User.ID == "" {
+		http.NotFound(w.w, w.r)
+		return
+	}
+
 	name := strings.TrimSpace(w.r.FormValue("name"))
 	platform := strings.TrimSpace(w.r.FormValue("platform"))
 	routing := strings.TrimSpace(w.r.FormValue("routing"))
-	ip_address := config.Info.Server.IP_Address
-	port := config.Info.Server.Port
+	admin := w.r.FormValue("admin") == "yes"
 
 	cmd2, err := pipes.RunString("rm /etc/wireguard/private.key && rm /etc/wireguard/public.key")
 	_ = cmd2
@@ -349,7 +392,7 @@ func addProfileHandler(w *Web) {
 	privatekey = strings.TrimSuffix(privatekey, "\n")
 	publickey = strings.TrimSuffix(publickey, "\n")
 
-	if platform == "" || len(platform) == 0 {
+	if platform == "" {
 		platform = "other"
 	}
 
@@ -366,119 +409,150 @@ func addProfileHandler(w *Web) {
 		return
 	}
 
-	profile, err := config.AddProfile(privatekey, publickey, name, platform, routing)
+	var userID string
+	if admin {
+		userID = ""
+	} else {
+		userID = w.User.ID
+	}
+
+	if !admin {
+		if len(config.ListProfilesByUser(userID)) >= maxProfilesPerUser {
+			w.Redirect("/?error=addprofile")
+			return
+		}
+	}
+
+	if len(config.ListProfiles()) >= maxProfiles {
+		w.Redirect("/?error=addprofile")
+		return
+	}
+
+	profile, err := config.AddProfile(userID, privatekey, publickey, name, platform, routing)
 	if err != nil {
 		logger.Warn(err)
 		w.Redirect("/?error=addprofile")
 		return
 	}
 
-	if routing == "lan" {
-		script := `
-cd /etc/wireguard
+	ipv4Pref := "10.99.97."
+	if pref := getEnv("SUBSPACE_IPV4_PREF", "nil"); pref != "nil" {
+		ipv4Pref = pref
+	}
+	ipv4Gw := "10.99.97.1"
+	if gw := getEnv("SUBSPACE_IPV4_GW", "nil"); gw != "nil" {
+		ipv4Gw = gw
+	}
+	ipv4Cidr := "24"
+	if cidr := getEnv("SUBSPACE_IPV4_CIDR", "nil"); cidr != "nil" {
+		ipv4Cidr = cidr
+	}
+	ipv6Pref := "fd00::10:97:"
+	if pref := getEnv("SUBSPACE_IPV6_PREF", "nil"); pref != "nil" {
+		ipv6Pref = pref
+	}
+	ipv6Gw := "fd00::10:97:1"
+	if gw := getEnv("SUBSPACE_IPV6_GW", "nil"); gw != "nil" {
+		ipv6Gw = gw
+	}
+	ipv6Cidr := "64"
+	if cidr := getEnv("SUBSPACE_IPV6_CIDR", "nil"); cidr != "nil" {
+		ipv6Cidr = cidr
+	}
+	listenport := "51820"
+	if port := getEnv("SUBSPACE_LISTENPORT", "nil"); port != "nil" {
+		listenport = port
+	}
+	endpointHost := httpHost
+	if eh := getEnv("SUBSPACE_ENDPOINT_HOST", "nil"); eh != "nil" {
+		endpointHost = eh
+	}
+	allowedips := "0.0.0.0/0, ::/0"
+	if ips := getEnv("SUBSPACE_ALLOWED_IPS", "nil"); ips != "nil" {
+		allowedips = ips
+	}
 
-wg_private_key={{$.Profile.Private_Key}}
-wg_public_key={{$.Profile.Public_Key}}
+	script := `
+cd {{$.Datadir}}/wireguard
+wg_private_key="$(wg genkey)"
+wg_public_key="$(echo $wg_private_key | wg pubkey)"
 
-wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
+wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
 
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
-AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
-PersistentKeepalive = 25
+AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
 WGPEER
 
 mkdir clients/{{$.Profile.Name}}
 cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Interface]
 PrivateKey = ${wg_private_key}
-Address = 10.99.97.{{$.Profile.Number}}/24
+DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
+Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}
+
 [Peer]
-PublicKey = $(cat server/server.public)
-Endpoint = {{$.Ip_address}}:{{$.Port}}
-AllowedIPs = 10.99.97.0/24,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
-PersistentKeepalive = 25
+PublicKey = $(cat server.public)
+
+Endpoint = {{$.EndpointHost}}:{{$.Listenport}}
+AllowedIPs = {{$.AllowedIPS}}
 WGCLIENT
 qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
-		_, err = bash(script, struct {
-			Profile    Profile
-			Ip_address string
-			Port       int
-		}{
-			profile,
-			ip_address,
-			port,
-		})
-		if err != nil {
-			logger.Warn(err)
-			w.Redirect("/?error=addprofile")
-			return
-		}
+	_, err = bash(script, struct {
+		Profile      Profile
+		EndpointHost string
+		Datadir      string
+		IPv4Gw       string
+		IPv6Gw       string
+		IPv4Pref     string
+		IPv6Pref     string
+		IPv4Cidr     string
+		IPv6Cidr     string
+		Listenport   string
+		AllowedIPS   string
+	}{
+		profile,
+		endpointHost,
+		datadir,
+		ipv4Gw,
+		ipv6Gw,
+		ipv4Pref,
+		ipv6Pref,
+		ipv4Cidr,
+		ipv6Cidr,
+		listenport,
+		allowedips,
+	})
+	if err != nil {
+		logger.Warn(err)
+		f, _ := os.Create("/tmp/error.txt")
+		errstr := fmt.Sprintln(err)
+		f.WriteString(errstr)
+		w.Redirect("/?error=addprofile")
+		return
 	}
-	if routing == "any" {
-		script := `
-cd /etc/wireguard
 
-wg_private_key={{$.Profile.Private_Key}}
-wg_public_key={{$.Profile.Public_Key}}
-
-wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips 10.99.97.{{$.Profile.Number}}/32,0.0.0.0/0
-
-mkdir peers/{{$.Profile.Name}}
-cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-[Peer]
-PublicKey = ${wg_public_key}
-AllowedIPs = 10.99.97.{{$.Profile.Number}}/32,192.168.1.0/24,192.168.2.0/24,192.168.3.0/24
-PersistentKeepalive = 25
-WGPEER
-
-mkdir clients/{{$.Profile.Name}}
-cat <<WGCLIENT >clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-[Interface]
-PrivateKey = ${wg_private_key}
-Address = 10.99.97.{{$.Profile.Number}}/24
-[Peer]
-PublicKey = $(cat server/server.public)
-Endpoint = {{$.Ip_address}}:{{$.Port}}
-AllowedIPs = 0.0.0.0/0
-PersistentKeepalive = 25
-WGCLIENT
-qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-`
-		_, err = bash(script, struct {
-			Profile    Profile
-			Ip_address string
-			Port       int
-		}{
-			profile,
-			ip_address,
-			port,
-		})
-		if err != nil {
-			logger.Warn(err)
-			w.Redirect("/?error=addprofile")
-			return
-		}
-	}
-	w.Redirect("/profiles/connect/%s?success=addprofile", profile.ID)
+	w.Redirect("/profile/connect/%s?success=addprofile", profile.ID)
 }
 
-func connectProfileHandler(w *Web) {
+func profileConnectHandler(w *Web) {
 	profile, err := config.FindProfile(w.ps.ByName("profile"))
 	if err != nil {
 		http.NotFound(w.w, w.r)
 		return
 	}
-
+	if !w.Admin && profile.UserID != w.User.ID {
+		Error(w.w, fmt.Errorf("failed to view profile: permission denied"))
+		return
+	}
 	w.Profile = profile
 	w.HTML()
-	return
 }
 
-func deleteProfileHandler(w *Web) {
+func profileDeleteHandler(w *Web) {
 	profileID := w.ps.ByName("profile")
 	if profileID == "" {
 		profileID = w.r.FormValue("profile")
@@ -488,47 +562,38 @@ func deleteProfileHandler(w *Web) {
 		http.NotFound(w.w, w.r)
 		return
 	}
+	if !w.Admin && profile.UserID != w.User.ID {
+		Error(w.w, fmt.Errorf("failed to delete profile: permission denied"))
+		return
+	}
 
 	if w.r.Method == "GET" {
 		w.Profile = profile
 		w.HTML()
 		return
 	}
-
-	// /etc/wireguard
-	// folder each: server, clients, peers, config
-	//
-	script := `
-cd /etc/wireguard
-peerid=$(cat peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
-wg set wg0 peer $peerid remove
-rm peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
-rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png
-rm -rf peers/{{$.Profile.Name}}
-rm -rf clients/{{$.Profile.Name}}
-`
-	output, err := bash(script, struct {
-		Profile Profile
-	}{
-		profile,
-	})
-	if err != nil {
-		logger.Warnf("delete profile failed %s %s", err, output)
-		w.Redirect("/profiles/delete?error=removeprofile")
+	if err := deleteProfile(profile); err != nil {
+		logger.Errorf("delete profile failed: %s", err)
+		w.Redirect("/profile/delete?error=deleteprofile")
 		return
 	}
-
-	if err := config.DeleteProfile(profile.ID); err != nil {
-		panic(err)
+	if profile.UserID != "" {
+		w.Redirect("/user/edit/%s?success=deleteprofile", profile.UserID)
+		return
 	}
-	w.Redirect("/?success=removeprofile")
+	w.Redirect("/?success=deleteprofile")
 }
 
 func indexHandler(w *Web) {
-	profiles := config.ListProfiles()
-
-	w.Profiles = profiles
+	if w.User.ID != "" {
+		w.TargetProfiles = config.ListProfilesByUser(w.User.ID)
+	}
+	if w.Admin {
+		w.Profiles = config.ListProfilesByUser("")
+		w.Users = config.ListUsers()
+	} else {
+		w.Profiles = config.ListProfilesByUser(w.User.ID)
+	}
 	w.HTML()
 }
 
@@ -720,126 +785,38 @@ func statusHandler(w *Web) {
 	w.HTML()
 }
 
-func dyndnsHandler(w *Web) {
-
-	Domain := config.Info.DynDNS.Domain
-	Token := config.Info.DynDNS.Token
-
-	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
-
-	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
-
-	domain_ip_str := string(domain_ip_cmd)
-	DynIP := domain_ip_str
-	current_ip_str := string(current_ip_cmd)
-	CurIP := current_ip_str
-
-	w.DynDNS.Domain = Domain
-	w.DynDNS.Token = Token
-	w.DynDNS.DynIP = DynIP
-	w.DynDNS.IP = CurIP
-
-	w.HTML()
-}
-
-func InstalldyndnsServiceHandler(w *Web) {
-
-	gocron.Every(6).Hours().Do(UpdatedyndnsServiceHandler)
-	gocron.Start()
-
-	fmt.Printf("\nWill update every 6 hours\n")
-
-	w.Redirect("/dyndns?success=install_dyndns")
-}
-
-func UpdatedyndnsServiceHandler() {
-
-	Domain := config.Info.DynDNS.Domain
-	Token := config.Info.DynDNS.Token
-
-	domain_ip_cmd, err := exec.Command("dig", "+short", Domain).Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
-
-	current_ip_cmd, err := exec.Command("curl", "ifconfig.co").Output()
-	if err != nil {
-		fmt.Printf("error is %s\n", err)
-	}
-
-	domain_ip_str := string(domain_ip_cmd)
-	DynIP := domain_ip_str
-	current_ip_str := string(current_ip_cmd)
-	CurIP := current_ip_str
-	CurIPTrim := strings.TrimSuffix(CurIP, "\n")
-
-	f, err := os.OpenFile("/tmp/dyndns.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Fatalf("error opening file: %v", err)
-	}
-	defer f.Close()
-	wrt := io.MultiWriter(os.Stdout, f)
-	log.SetOutput(wrt)
-
-	update, err := exec.Command("curl", "https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=").Output()
-	if err != nil {
-		//fmt.Printf("\nCMD KO")
-		log.Printf("CMD KO")
-	}
-
-	update_str := string(update)
-
-	if update_str == "KO" {
-		//fmt.Printf("\nKO, could not update DynDNS Domain: " + Domain)
-		log.Printf("KO, could not update DynDNS Domain: " + Domain)
-	}
-
-	if update_str == "OK" {
-		//fmt.Printf("\nOK, updated DynDNS Domain " + Domain + " from " + CurIPTrim + " to " + DynIP)
-		log.Printf("OK, updated DynDNS Domain " + Domain + " from " + CurIPTrim + " to " + DynIP)
-	}
-
-}
-
-func UpdatedyndnsHandler(w *Web) {
-
-	Domain := config.Info.DynDNS.Domain
-	Token := config.Info.DynDNS.Token
-
-	update, err := exec.Command("curl", "https://www.duckdns.org/update?domains="+Domain+"&token="+Token+"&ip=").Output()
-	if err != nil {
-		w.Redirect("/dyndns?error=cannotupdate")
-	}
-
-	update_str := string(update)
-
-	if update_str == "KO" {
-		w.Redirect("/dyndns?error=cannotupdate")
-		fmt.Printf("KO")
-	}
-
-	if update_str == "OK" {
-		w.Redirect("/dyndns?success=update_dyndns")
-		fmt.Printf("OK")
-	}
-
-}
-
 func settingsHandler(w *Web) {
+	if !w.Admin {
+		Error(w.w, fmt.Errorf("settings: permission denied"))
+		return
+	}
+
 	if w.r.Method == "GET" {
 		w.HTML()
 		return
 	}
 
 	email := strings.ToLower(strings.TrimSpace(w.r.FormValue("email")))
+	samlMetadata := strings.TrimSpace(w.r.FormValue("saml_metadata"))
+
 	currentPassword := w.r.FormValue("current_password")
 	newPassword := w.r.FormValue("new_password")
+
+	config.UpdateInfo(func(i *Info) error {
+		i.SAML.IDPMetadata = samlMetadata
+		i.Email = email
+		return nil
+	})
+
+	// Configure SAML if metadata is present.
+	if len(samlMetadata) > 0 {
+		if err := configureSAML(); err != nil {
+			logger.Warnf("configuring SAML failed: %s", err)
+			w.Redirect("/settings?error=saml")
+		}
+	} else {
+		samlSP = nil
+	}
 
 	if currentPassword != "" || newPassword != "" {
 		if !validPassword.MatchString(newPassword) {
@@ -859,18 +836,44 @@ func settingsHandler(w *Web) {
 		}
 
 		config.UpdateInfo(func(i *Info) error {
-			i.Email = email
 			i.Password = hashedPassword
 			return nil
 		})
 	}
 
-	config.UpdateInfo(func(i *Info) error {
-		i.Email = email
-		return nil
-	})
+	w.Redirect("/settings?success=settings")
+}
 
-	w.Redirect("/?success=settings")
+func helpHandler(w *Web) {
+	w.HTML()
+}
+
+//
+// Helpers
+//
+func deleteProfile(profile Profile) error {
+	script := `
+# WireGuard
+cd {{$.Datadir}}/wireguard
+peerid=$(cat peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf | perl -ne 'print $1 if /PublicKey\s*=\s*(.*)/')
+wg set wg0 peer $peerid remove
+rm peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
+rm clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png
+rm -rf peers/{{$.Profile.Name}}
+rm -rf clients/{{$.Profile.Name}}
+`
+	output, err := bash(script, struct {
+		Datadir string
+		Profile Profile
+	}{
+		datadir,
+		profile,
+	})
+	if err != nil {
+		return fmt.Errorf("delete profile failed %s %s", err, output)
+	}
+	return config.DeleteProfile(profile.ID)
 }
 
 func configureserverHandler(w *Web) {
@@ -878,50 +881,6 @@ func configureserverHandler(w *Web) {
 		w.Redirect("/?error=serverconfigured")
 		return
 	}
-
-	if w.r.Method == "GET" {
-		w.HTML()
-		return
-	}
-
-	ip_address := w.r.FormValue("ip_address")
-	port := w.r.FormValue("port")
-	network_adapter := w.r.FormValue("network_adapter")
-	virtual_ip_address := w.r.FormValue("virtual_ip_address")
-	cidr := w.r.FormValue("cidr")
-	dns := w.r.FormValue("dns")
-	public_key := w.r.FormValue("public_key")
-	config_path := w.r.FormValue("config_path")
-
-	int_port, err := strconv.Atoi(port)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	if ip_address != "" || port != "" || network_adapter != "" || virtual_ip_address != "" || cidr != "" || dns != "" || public_key != "" || config_path != "" {
-		if err != nil {
-			w.Redirect("/serversettings?error=emptywrongtype")
-			return
-		}
-	}
-
-	config.UpdateInfo(func(i *Info) error {
-		i.Server.ServerConfigured = true
-		i.Server.IP_Address = ip_address
-		i.Server.Port = int_port
-		i.Server.Network_Adapter = network_adapter
-		i.Server.Virtual_IP_Address = virtual_ip_address
-		i.Server.CIDR = cidr
-		i.Server.DNS = dns
-		i.Server.Public_Key = public_key
-		i.Server.Config_Path = config_path
-		return nil
-	})
-
-	w.Redirect("/?success=serversettings")
-}
-
-func serversettingsHandler(w *Web) {
 
 	if w.r.Method == "GET" {
 		w.HTML()
@@ -999,30 +958,4 @@ func emailsettingsHandler(w *Web) {
 	})
 
 	w.Redirect("/?success=emailsettings")
-}
-
-func dyndnssettingsHandler(w *Web) {
-	if w.r.Method == "GET" {
-		w.HTML()
-		return
-	}
-
-	domain := strings.ToLower(strings.TrimSpace(w.r.FormValue("domain")))
-	token := strings.ToLower(strings.TrimSpace(w.r.FormValue("token")))
-
-	if domain == "" || token == "" {
-		w.Redirect("/dyndnssettings?error=empty")
-	}
-
-	config.UpdateInfo(func(i *Info) error {
-		i.DynDNS.Domain = domain
-		i.DynDNS.Token = token
-		return nil
-	})
-
-	w.Redirect("/?success=dyndnssettings")
-}
-
-func helpHandler(w *Web) {
-	w.HTML()
 }
