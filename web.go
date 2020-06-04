@@ -171,11 +171,6 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 			return
 		}
 
-		if !config.FindInfo().Server.ServerConfigured {
-			web.Redirect("/configureserver")
-			return
-		}
-
 		// Has an existing session.
 		if session, _ := ValidateSession(r); session != nil {
 			if session.UserID != "" {

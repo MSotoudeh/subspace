@@ -106,17 +106,6 @@ type Info struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	} `json:"mail"`
-	Server struct {
-		ServerConfigured   bool   `json:"serverconfigure"`
-		IP_Address         string `json:"ip_address"`
-		Port               int    `json:"port"`
-		Network_Adapter    string `json:"network_adapter"`
-		Virtual_IP_Address string `json:"virtual_ip_address"`
-		CIDR               string `json:"cidr"`
-		DNS                string `json:"dns"`
-		Public_Key         string `json:"public_key"`
-		Config_Path        string `json:"config_path"`
-	} `json:"server"`
 }
 
 type Config struct {
