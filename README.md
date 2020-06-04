@@ -7,6 +7,8 @@
 
 * **WireGuard VPN Protocol**
   * The most modern and fastest VPN protocol.
+* **Single Sign-On (SSO) with SAML**
+  * Support for SAML providers like G Suite and Okta.
 * **Add Devices**
   * Connect from Mac OS X, Windows, Linux, Android, or iOS.
 * **Remove Devices**
@@ -15,8 +17,7 @@
   * Each client gets a unique downloadable config file.
 * **QR Code for client**
   * Each client gets a unique QR code to import the config
-* **HTTP or HTTPS**
-  * You can choose if you want auto https or if you want to run behind a reverse
+  * Generates a QR code for easy importing on iOS and Android.
 
 ## Run Subspace on your own
 
@@ -26,6 +27,7 @@ Running Subspace on a VPS is designed to be as simple as possible.
   * Single static Go binary with assets bundled
   * Automatic TLS using Let's Encrypt
   * Redirects http to https
+  * Works with a reverse proxy or standalone. 
 
 ### 1. Get a server
 
@@ -63,17 +65,23 @@ $ subspace --http-host subspace.example.com
 Usage:
 
   -backlink string
-    	backlink (optional)
+	backlink (optional)
   -datadir string
-    	data dir (default "/data")
+	data dir (default "/data")
   -debug
-    	debug mode
+	debug mode
   -help
-    	display help and exit
+	display help and exit
+  -http-addr string 
+        HTTP listen address (default ":80") 
   -http-host string
-    	HTTP host
+	HTTP host
+  -http-insecure 
+        enable sessions cookies for http (no https) not recommended 
+  -letsencrypt 
+        enable TLS using Let's Encrypt on port 443 (default true) 
   -version
-    	display version and exit
+	display version and exit
 
 ```
 ### Run as a Docker container
@@ -83,7 +91,7 @@ Usage:
 The container expects WireGuard to be installed on the host. The official image is `subspacecloud/subspace`.
 
 ```bash
-add-apt-repostory -y ppa:wireguard/wireguard
+add-apt-repository -y ppa:wireguard/wireguard
 apt-get update
 apt-get install -y wireguard
 
@@ -158,5 +166,3 @@ $ sudo docker create ... (see above)
 - Dyndns
 - Ability to choose between http and https (DONE)
 - Create new docker image
-
-

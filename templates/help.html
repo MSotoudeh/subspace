@@ -1,18 +1,20 @@
 {{template "header.html" .}}
 
 <div class="ui container">
+    <div class="ui padded segment">
 
-    <div class="ui raised segment">
-        <h1 class="ui center aligned header">
+        <div class="ui huge center aligned header">
             Subspace
             <div class="sub header">
-                Simple WireGuard VPN Server
+                Private WireGuard&reg; VPN Server
             </div>
-        </h1>
+        </div>
+
+        <div class="ui hidden section divider"></div>
 
         <div class="ui big list">
             <div class="item">
-                <i class="large black check circle outline icon"></i>
+                <i class="large green check circle outline icon"></i>
                 <div class="content">
                     <div class="header">
                         Encrypt your connection
@@ -23,7 +25,7 @@
                 </div>
             </div>
             <div class="item">
-                <i class="large black check circle outline icon"></i>
+                <i class="large green check circle outline icon"></i>
                 <div class="content">
                     <div class="header">
                         Stop your internet provider from spying on you
@@ -34,7 +36,7 @@
                 </div>
             </div>
             <div class="item">
-                <i class="large black check circle outline icon"></i>
+                <i class="large green check circle outline icon"></i>
                 <div class="content">
                     <div class="header">
                         Connect from any device
@@ -48,7 +50,7 @@
 
         <div class="ui hidden section divider"></div>
 
-        <h2 class="ui center aligned header">License</h2>
+        <div class="ui large center aligned header">License</div>
         <p>
             MIT License
         </p>
@@ -77,11 +79,22 @@
             SOFTWARE.
         </p>
 
-        <h2 class="ui center aligned header">Source Code</h2>
+        <div class="ui hidden section divider"></div>
 
-        <h2 class="ui center aligned header"><a class="link-color" href="https://github.com/subspacecloud/subspace"><i class="huge github icon"></i></a></h2>
+        <div class="ui large center aligned header">Source Code</div>
+
+        <p class="center-aligned">
+            <a href="https://github.com/subspacecommunity/subspace">Subspace on GitHub</a>
+        </p>
+
+        <div class="ui hidden section divider"></div>
+
+        <div class="ui large center aligned header">Trademarks</div>
+        <p class="center-aligned">
+            WireGuard is a registered trademark of Jason A. Donenfeld
+        </p>
     </div>
-
 </div>
 
 {{template "footer.html" .}}
+
