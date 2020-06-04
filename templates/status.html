@@ -7,40 +7,9 @@
     </div>
     <div class="ui hidden divider"></div>
       {{if $.Statuses}}
-        <div class="ui one stackable cards">
+        <div class="ui two stackable cards">
           {{range $n, $s := $.Statuses}}
               {{if eq $s.Type "Server"}}
-              <div class="show-profile card">
-                  <div class="content">
-                      <div class="header">
-                          <i class="server icon"></i>
-                          {{$s.Type}}
-                          <!-- {{$s.Public_Key}} -->
-                      </div>
-                  </div>
-                  <div class="extra lcontent">
-                      <div class="ui large list">
-                          <div class="item">
-                              <div class="content">
-                                  <div class="header">
-                                    <table>
-                                      <tr>
-                                        <td width="100">Name:</td>
-                                        <td>{{$s.Name}}</td>
-                                      </tr>
-                                      <tr>
-                                        <td>Endpoint:</td>
-                                        <td>{{$s.Domain}}:{{$s.Port}}</td>
-                                      </tr>
-                                    </table>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-        </div>
-        <div class="ui two stackable cards">
               {{else}}
               <div class="show-profile card">
                   <div class="content">

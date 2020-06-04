@@ -374,18 +374,22 @@ func profileAddHandler(w *Web) {
 	routing := strings.TrimSpace(w.r.FormValue("routing"))
 	admin := w.r.FormValue("admin") == "yes"
 
-	cmd2, err := pipes.RunString("rm {{$.Datadir}}/wireguard/private.key && rm {{$.Datadir}}/wireguard/public.key")
+	cmd2, err := pipes.RunString("rm /etc/wireguard/private.key && rm /etc/wireguard/public.key")
+	//cmd2, err := pipes.RunString("rm {{$.Datadir}}/wireguard/private.key && rm {{$.Datadir}}/wireguard/public.key")
 	_ = cmd2
 
-	cmd, err := pipes.RunString("wg genkey | tee {{$.Datadir}}/wireguard/private.key | wg pubkey | tee {{$.Datadir}}/wireguard/public.key")
+	cmd, err := pipes.RunString("wg genkey | tee /etc/wireguard/private.key | wg pubkey | tee /etc/wireguard/public.key")
+	//cmd, err := pipes.RunString("wg genkey | tee {{$.Datadir}}/wireguard/private.key | wg pubkey | tee {{$.Datadir}}/wireguard/public.key")
 	_ = cmd
 
 	if err != nil {
 		fmt.Printf("error is %s\n", err)
 	}
 
-	privatekey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/private.key")
-	publickey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/public.key")
+	privatekey_str, err := ioutil.ReadFile("/etc/wireguard/private.key")
+	//privatekey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/private.key")
+	publickey_str, err := ioutil.ReadFile("/etc/wireguard/public.key")
+	//publickey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/public.key")
 
 	privatekey := string(privatekey_str)
 	publickey := string(publickey_str)
@@ -477,7 +481,7 @@ cd {{$.Datadir}}/wireguard
 wg_private_key={{$.Profile.Private_Key}}
 wg_public_key={{$.Profile.Public_Key}}
 
-wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
 
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf

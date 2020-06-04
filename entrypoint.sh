@@ -125,26 +125,27 @@ fi
 #
 # WireGuard (${SUBSPACE_IPV4_POOL})
 #
-if ! test -d /data/wireguard ; then
-    mkdir /data/wireguard
-    cd /data/wireguard
+if ! test -d /etc/wireguard ; then
+    mkdir /etc/wireguard
+    cd /etc/wireguard
 
     mkdir clients
     touch clients/null.conf # So you can cat *.conf safely
     mkdir peers
     touch peers/null.conf # So you can cat *.conf safely
+    mkdir server
 
     # Generate public/private server keys.
-    wg genkey | tee server.private | wg pubkey > server.public
+    wg genkey | tee server/server.private | wg pubkey > server/server.public
 fi
 
-cat <<WGSERVER >/data/wireguard/server.conf
+cat <<WGSERVER >/etc/wireguard/server/server.conf
 [Interface]
-PrivateKey = $(cat /data/wireguard/server.private)
+PrivateKey = $(cat /etc/wireguard/server/server.private)
 ListenPort = ${SUBSPACE_LISTENPORT}
 
 WGSERVER
-cat /data/wireguard/peers/*.conf >>/data/wireguard/server.conf
+cat /etc/wireguard/peers/*.conf >>/etc/wireguard/server/server.conf
 
 if ip link show wg0 2>/dev/null; then
     ip link del wg0
@@ -154,7 +155,7 @@ export SUBSPACE_IPV4_CIDR=$(echo ${SUBSPACE_IPV4_POOL-} |cut -d '/' -f2)
 ip addr add ${SUBSPACE_IPV4_GW}/${SUBSPACE_IPV4_CIDR} dev wg0
 export SUBSPACE_IPV6_CIDR=$(echo ${SUBSPACE_IPV6_POOL-} |cut -d '/' -f2)
 ip addr add ${SUBSPACE_IPV6_GW}/${SUBSPACE_IPV6_CIDR} dev wg0
-wg setconf wg0 /data/wireguard/server.conf
+wg setconf wg0 /etc/wireguard/server/server.conf
 ip link set wg0 up
 
 
