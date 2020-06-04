@@ -474,16 +474,17 @@ func profileAddHandler(w *Web) {
 
 	script := `
 cd {{$.Datadir}}/wireguard
-wg_private_key="$(wg genkey)"
-wg_public_key="$(echo $wg_private_key | wg pubkey)"
+wg_private_key={{$.Profile.Private_Key}}
+wg_public_key={{$.Profile.Public_Key}}
 
-wg set wg0 peer ${wg_public_key} allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+wg set wg0 peer ${wg_public_key} persistent-keepalive 25 allowed-ips {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
 
 mkdir peers/{{$.Profile.Name}}
 cat <<WGPEER >peers/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 [Peer]
 PublicKey = ${wg_public_key}
 AllowedIPs = {{$.IPv4Pref}}{{$.Profile.Number}}/32,{{$.IPv6Pref}}{{$.Profile.Number}}/128
+PersistentKeepalive = 25
 WGPEER
 
 mkdir clients/{{$.Profile.Name}}
@@ -494,7 +495,7 @@ DNS = {{$.IPv4Gw}}, {{$.IPv6Gw}}
 Address = {{$.IPv4Pref}}{{$.Profile.Number}}/{{$.IPv4Cidr}},{{$.IPv6Pref}}{{$.Profile.Number}}/{{$.IPv6Cidr}}
 
 [Peer]
-PublicKey = $(cat server.public)
+PublicKey = $(cat server/server.public)
 
 Endpoint = {{$.EndpointHost}}:{{$.Listenport}}
 AllowedIPs = {{$.AllowedIPS}}
