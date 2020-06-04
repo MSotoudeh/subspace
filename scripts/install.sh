@@ -87,7 +87,7 @@ Description=Subspace
 
 [Service]
 ExecStartPre=/usr/local/etc/wg_service.sh
-ExecStart=/usr/local/bin/subspace --debug --http-host $host
+ExecStart=/usr/local/bin/subspace --debug --datadir=/etc --letsencrypt=false --http-insecure=true --http-host $host
 
 [Install]
 WantedBy=multi-user.target
@@ -210,7 +210,7 @@ go get -v \
     github.com/jteeuwen/go-bindata/... \
     github.com/dustin/go-humanize \
     github.com/julienschmidt/httprouter \
-    github.com/Sirupsen/logrus \
+    github.com/sirupsen/logrus \
     github.com/gorilla/securecookie \
     golang.org/x/crypto/acme/autocert \
     golang.org/x/time/rate \
@@ -218,7 +218,9 @@ go get -v \
     go.uber.org/zap \
     gopkg.in/gomail.v2 \
     github.com/ebuchman/go-shell-pipes \
-    github.com/jasonlvhit/gocron
+    github.com/crewjam/saml \
+    github.com/crewjam/saml/samlsp \
+    github.com/skip2/go-qrcode
 
 GODEBUG="netdns=go http2server=0"
 
