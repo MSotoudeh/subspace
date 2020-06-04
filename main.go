@@ -17,11 +17,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
-	log "github.com/sirupsen/logrus"
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 	"github.com/gorilla/securecookie"
+	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/acme/autocert"
 )
 
