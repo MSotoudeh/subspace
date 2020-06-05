@@ -1,9 +1,2 @@
-pkg/
-
-src/
-
+subspace-linux-amd64
 bindata.go
-
-bin/subspace-linux-amd64
-
-scripts
