@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/jteeuwen/go-bindata v3.0.8-0.20180305030458-6025e8de665b+incompatible
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/kevinburke/go-bindata v3.21.0+incompatible // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/sirupsen/logrus v1.6.0
 	github.com/skip2/go-qrcode v0.0.0-20200519171959-a3b48390827e
