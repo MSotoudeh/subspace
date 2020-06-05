@@ -6,7 +6,7 @@ services:
      dockerfile: Dockerfile
    container_name: subspace
    volumes:
-    - /mnt/docker/subspace_data:/data
+    - /opt/docker/subspace_data:/data
    restart: always
    environment:
     - SUBSPACE_HTTP_HOST=localhost
