@@ -118,6 +118,7 @@ if ! test -d /data/wireguard; then
   mkdir peers
   touch peers/null.conf # So you can cat *.conf safely
   mkdir server
+  mkdir config
 
   # Generate public/private server keys.
   wg genkey | tee server/server.private | wg pubkey > server/server.public
