@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -81,38 +80,6 @@ func wireguardQRConfigHandler(w *Web) {
 	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", len(img)))
 	if _, err := w.w.Write(img); err != nil {
 		Error(w.w, err)
-		return
-	}
-}
-
-func wireguardPNGHandler(w *Web) {
-	profile, err := config.FindProfile(w.ps.ByName("profile"))
-	if err != nil {
-		http.NotFound(w.w, w.r)
-		return
-	}
-
-	f, err := os.Open(profile.WireGuardPNGPath())
-	if err != nil {
-		logger.Warn(err)
-		Error(w.w, fmt.Errorf("png file error"))
-		return
-	}
-
-	stat, err := f.Stat()
-	if err != nil {
-		logger.Warn(err)
-		Error(w.w, fmt.Errorf("png file size error"))
-		return
-	}
-
-	w.w.Header().Set("Content-Disposition", "attachment; filename="+profile.WireGuardPNGName())
-	w.w.Header().Set("Content-Type", "application/x-wireguard-profile")
-	w.w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
-	_, err = io.Copy(w.w, f)
-	if err != nil {
-		logger.Error(err)
-		Error(w.w, fmt.Errorf("config output error"))
 		return
 	}
 }
@@ -514,7 +481,6 @@ PublicKey = $(cat server/server.public)
 Endpoint = {{$.EndpointHost}}:{{$.Listenport}}
 AllowedIPs = {{$.AllowedIPS}}
 WGCLIENT
-qrencode -s 4 -t PNG -o clients/{{$.Profile.Name}}/{{$.Profile.ID}}.png < clients/{{$.Profile.Name}}/{{$.Profile.ID}}.conf
 `
 	_, err = bash(script, struct {
 		Profile      Profile

@@ -39,8 +39,7 @@ RUN apk add --no-cache \
     socat  \
     wireguard-tools \
     runit \
-    perl \
-    libqrencode
+    perl
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh" ]
 
