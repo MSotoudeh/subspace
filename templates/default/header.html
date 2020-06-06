@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="referrer" content="origin">
+        <link rel="icon" href="/static/favicon_default.png?v={{$.Version}}">
+        <link rel="apple-touch-icon" href="/static/favicon_default.png?v={{$.Version}}">
+
+        <title>Subspace</title>
+
+        <link rel="stylesheet" type="text/css" href="/static/semantic/semantic.min.css?v={{$.Version}}">
+        <link rel="stylesheet" type="text/css" href="/static/style.css?v={{$.Version}}">
+        <link rel="stylesheet" type="text/css" href="/static/roboto.css?v={{$.Version}}">
+        <link rel="stylesheet" href="/static/jquery.modal.min.css?v={{$.Version}}" />
+
+        <script src="/static/jquery.min.js?v={{$.Version}}"></script>
+        <script src="/static/semantic/semantic.min.js?v={{$.Version}}"></script>
+        <script src="/static/jquery.modal.min.js?v={{$.Version}}"></script>
+        <script src="/static/script.js?v={{$.Version}}"></script>
+    </head>
+    <body>
+
+        <div class="borderless ui big green inverted menu">
+            <div class="ui container">
+                {{if and $.Backlink $.Admin}}
+                    {{if $.User.Admin}}
+                        <!-- don't show -->
+                    {{else}}
+                    <a class="item" href="{{.Backlink}}"><i class="home icon"></i></a>
+                    {{end}}
+                {{end}}
+                {{if $.Admin}}
+                <a href="/" class="{{if eq $.Section "index"}}active{{end}} item"></i>Subspace</a>
+                <a href="/status" class="{{if eq $.Section "status"}}active{{end}} item">Status</a>
+                {{end}}
+
+                {{if eq $.Section "signin" "forgot"}}
+                    <!-- Don't show -->
+                {{else if $.Admin}}
+                    <div class="ui right dropdown item">
+                        {{if $.User.Email}}
+                            <div>{{$.User.Email}}</div>
+                        {{else}}
+                            <div>{{$.Info.Email}}</div>
+                        {{end}}
+                        <i class="dropdown icon"></i>
+                        <div class="menu">
+                            <a href="/settings" class="{{if eq $.Section "settings"}}active{{end}} item"><i class="cog icon"></i>Account Settings</a>
+                            <a href="/emailsettings" class="{{if eq $.Section "emailsettings"}}active{{end}} item"><i class="cog icon"></i>Email Settings</a>
+                            <a href="/help" class="{{if eq $.Section "help"}}active{{end}} item"><i class="help icon"></i>Help</a>
+                            <a href="/signout" class="item confirm" data-prompt="Sign out?"><i class="sign out icon"></i>Sign out</a>
+                        </div>
+                    </div>
+                {{else}}
+                <div class="ui right dropdown item">
+                    {{if $.User.Email}}
+                        <div>{{$.User.Email}}</div>
+                    {{else}}
+                        <div>{{$.Info.Email}}</div>
+                    {{end}}
+                    <i class="dropdown icon"></i>
+                    <div class="menu">
+                        <a href="/help" class="{{if eq $.Section "help"}}active{{end}} item"><i class="help icon"></i>Help</a>
+                        <a href="/signout" class="item confirm" data-prompt="Sign out?"><i class="sign out icon"></i>Sign out</a>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        <div class="ui hidden divider"></div>

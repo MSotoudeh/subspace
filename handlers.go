@@ -435,8 +435,6 @@ func profileAddHandler(w *Web) {
 		return
 	}
 
-
-
 	profile, err := config.AddProfile(userID, privatekey, publickey, name, platform, routing)
 	if err != nil {
 		logger.Warn(err)
@@ -484,7 +482,7 @@ func profileAddHandler(w *Web) {
 		} else if routing == "any" {
 			allowedips = "0.0.0.0/0, ::/0"
 		}
-	}	else if routing == "" || len(routing) == 0 {
+	} else if routing == "" || len(routing) == 0 {
 		allowedips = "0.0.0.0/0, ::/0"
 	}
 

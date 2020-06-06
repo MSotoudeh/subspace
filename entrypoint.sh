@@ -14,6 +14,10 @@ if [ -z "${SUBSPACE_BACKLINK-}" ]; then
   export SUBSPACE_BACKLINK=""
 fi
 
+if [ -z "${SUBSPACE_THEME-}" ]; then
+  export SUBSPACE_THEME=""
+fi
+
 if [ -z "${SUBSPACE_IPV4_POOL-}" ]; then
   export SUBSPACE_IPV4_POOL="10.99.97.0/24"
 fi
@@ -183,7 +187,8 @@ exec /usr/bin/subspace \
     "--http-addr=${SUBSPACE_HTTP_ADDR}" \
     "--http-insecure=${SUBSPACE_HTTP_INSECURE}" \
     "--backlink=${SUBSPACE_BACKLINK}" \
-    "--letsencrypt=${SUBSPACE_LETSENCRYPT}"
+    "--letsencrypt=${SUBSPACE_LETSENCRYPT}" \
+    "--theme=${SUBSPACE_THEME}"
 RUNIT
   chmod +x /etc/service/subspace/run
 

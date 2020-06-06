@@ -20,6 +20,7 @@ services:
     - SUBSPACE_IPV4_GW=10.99.97.1
     - SUBSPACE_IPV6_GW=fd00::10:97:1
     - SUBSPACE_IPV6_NAT_ENABLED=1
+    - SUBSPACE_THEME=default
    cap_add:
     - NET_ADMIN
    network_mode: "host"

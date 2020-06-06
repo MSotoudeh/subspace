@@ -31,7 +31,7 @@
   - Each client gets a unique downloadable config file.
   - Generates a QR code for easy importing on iOS and Android.
 - **Status page for Admins**
-    - Able to see the status of connections in a dedicated page.
+  - Able to see the status of connections in a dedicated page.
 
 ## Contributing
 
@@ -89,6 +89,8 @@ $ subspace --http-host subspace.example.com
         enable sessions cookies for http (no https) not recommended
   -letsencrypt
         enable TLS using Let's Encrypt on port 443 (default true)
+  -theme string
+	Visual theme, available: default, black (default "default")
   -version
         display version and exit
 ```
@@ -161,6 +163,8 @@ docker create \
     --env SUBSPACE_IPV6_GW="fd00::10:97:1" \
 	# Optional variable to enable or disable IPv6 NAT
     --env SUBSPACE_IPV6_NAT_ENABLED=1 \
+	# Optional variale to set a theme
+    --env SUBSPACE_THEME="default" \
     subspacecommunity/subspace:latest
 
 $ sudo docker start subspace
@@ -194,6 +198,7 @@ services:
     - SUBSPACE_IPV4_GW=10.99.97.1
     - SUBSPACE_IPV6_GW=fd00::10:97:1
     - SUBSPACE_IPV6_NAT_ENABLED=1
+    - SUBSPACE_THEME=default
    cap_add:
     - NET_ADMIN
    network_mode: "host"

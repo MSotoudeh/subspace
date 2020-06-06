@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	//"log"
+
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
 
@@ -109,11 +111,19 @@ func (w *Web) HTML() {
 		},
 	})
 
+	theme_choosen := "default"
+	if theme != "nil" {
+		theme_choosen = theme
+		//log.Print("Docker Theme is: ", theme)
+	} else {
+		//log.Print("Theme is: ", theme_choosen)
+	}
+
 	for _, filename := range AssetNames() {
-		if !strings.HasPrefix(filename, "templates/") {
+		if !strings.HasPrefix(filename, "templates/"+theme_choosen+"/") {
 			continue
 		}
-		name := strings.TrimPrefix(filename, "templates/")
+		name := strings.TrimPrefix(filename, "templates/"+theme_choosen+"/")
 		b, err := Asset(filename)
 		if err != nil {
 			Error(w.w, err)

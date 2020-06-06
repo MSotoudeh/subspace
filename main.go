@@ -50,6 +50,9 @@ var (
 	// backlink
 	backlink string
 
+	// theme
+	theme string
+
 	// show version
 	showVersion bool
 
@@ -89,6 +92,7 @@ func init() {
 	cli.StringVar(&backlink, "backlink", "", "backlink (optional)")
 	cli.StringVar(&httpHost, "http-host", "", "HTTP host")
 	cli.StringVar(&httpAddr, "http-addr", ":80", "HTTP listen address")
+	cli.StringVar(&theme, "theme", "default", "Visual theme, available: default, black")
 	cli.BoolVar(&httpInsecure, "http-insecure", false, "enable sessions cookies for http (no https) not recommended")
 	cli.BoolVar(&letsencrypt, "letsencrypt", true, "enable TLS using Let's Encrypt on port 443")
 	cli.BoolVar(&showVersion, "version", false, "display version and exit")
@@ -122,6 +126,18 @@ func main() {
 	if httpHost == "" {
 		usage("--http-host flag is required")
 		os.Exit(1)
+	}
+
+	// if theme is not set, set to default
+	if theme == "" || len(theme) == 0 {
+		theme = "default"
+	}
+
+	// if value is not available, list available, and revert to default
+	if theme != "default" && theme != "black" {
+		//usage("Themes available are: default, black. Defaulting to 'default'")
+		fmt.Fprintf(os.Stderr, "WARNING: %s\n", "Themes available are: default, black. Defaulting to 'default'")
+		theme = "default"
 	}
 
 	// debug logging
