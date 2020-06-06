@@ -134,7 +134,7 @@ PrivateKey = $(cat /data/wireguard/server/server.private)
 ListenPort = ${SUBSPACE_LISTENPORT}
 
 WGSERVER
-cat /data/wireguard/peers/*.conf >>/data/wireguard/server/server.conf
+cat /data/wireguard/peers/*/*.conf >>/data/wireguard/server/server.conf
 
 if ip link show wg0 2>/dev/null; then
   ip link del wg0
