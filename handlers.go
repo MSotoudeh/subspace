@@ -374,13 +374,9 @@ func profileAddHandler(w *Web) {
 	routing := strings.TrimSpace(w.r.FormValue("routing"))
 	admin := w.r.FormValue("admin") == "yes"
 
-	//cmd2, err := pipes.RunString("rm /etc/wireguard/private.key && rm /etc/wireguard/public.key")
-	//cmd2, err := pipes.RunString("rm {{$.Datadir}}/wireguard/private.key && rm {{$.Datadir}}/wireguard/public.key")
 	cmd2, err := pipes.RunString("rm /data/wireguard/private.key && rm /data/wireguard/public.key")
 	_ = cmd2
 
-	//cmd, err := pipes.RunString("wg genkey | tee /etc/wireguard/private.key | wg pubkey | tee /etc/wireguard/public.key")
-	//cmd, err := pipes.RunString("wg genkey | tee {{$.Datadir}}/wireguard/private.key | wg pubkey | tee {{$.Datadir}}/wireguard/publi$
 	cmd, err := pipes.RunString("wg genkey | tee /data/wireguard/private.key | wg pubkey | tee /data/wireguard/public.key")
 	_ = cmd
 
@@ -388,11 +384,7 @@ func profileAddHandler(w *Web) {
 		fmt.Printf("error is %s\n", err)
 	}
 
-	//privatekey_str, err := ioutil.ReadFile("/etc/wireguard/private.key")
-	//privatekey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/private.key")
 	privatekey_str, err := ioutil.ReadFile("/data/wireguard/private.key")
-	//publickey_str, err := ioutil.ReadFile("/etc/wireguard/public.key")
-	//publickey_str, err := ioutil.ReadFile("{{$.Datadir}}/wireguard/public.key")
 	publickey_str, err := ioutil.ReadFile("/data/wireguard/public.key")
 
 	privatekey := string(privatekey_str)
@@ -404,16 +396,23 @@ func profileAddHandler(w *Web) {
 		platform = "other"
 	}
 
+	//Set routing to "any" if not choosen during creation
 	if routing == "" || len(routing) == 0 {
-		routing = "any"
-	} else if routing == "all" {
-		routing = "all"
-	} else if routing == "any" {
 		routing = "any"
 	}
 
 	if name == "" {
 		w.Redirect("/?error=profilename")
+		return
+	}
+
+	// Check if profile name is already used
+	if _, err := os.Stat("/data/wireguard/clients/" + name); !os.IsNotExist(err) {
+		w.Redirect("/?error=profileexists")
+		return
+	}
+	if _, err := os.Stat("/data/wireguard/peers/" + name); !os.IsNotExist(err) {
+		w.Redirect("/?error=profileexists")
 		return
 	}
 
@@ -435,6 +434,8 @@ func profileAddHandler(w *Web) {
 		w.Redirect("/?error=addprofile")
 		return
 	}
+
+
 
 	profile, err := config.AddProfile(userID, privatekey, publickey, name, platform, routing)
 	if err != nil {
@@ -475,9 +476,16 @@ func profileAddHandler(w *Web) {
 	if eh := getEnv("SUBSPACE_ENDPOINT_HOST", "nil"); eh != "nil" {
 		endpointHost = eh
 	}
+	//Checks to handle different scenarios
 	allowedips := "0.0.0.0/0, ::/0"
 	if ips := getEnv("SUBSPACE_ALLOWED_IPS", "nil"); ips != "nil" {
-		allowedips = ips
+		if routing == "lan" {
+			allowedips = ips
+		} else if routing == "any" {
+			allowedips = "0.0.0.0/0, ::/0"
+		}
+	}	else if routing == "" || len(routing) == 0 {
+		allowedips = "0.0.0.0/0, ::/0"
 	}
 
 	script := `

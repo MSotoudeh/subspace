@@ -28,6 +28,8 @@
                         Adding device failed
                     {{else if eq $error "profilename"}}
                         Device name is required
+                    {{else if eq $error "profileexists"}}
+                        Profile name already taken
                     {{else}}
                         {{$error}}
                     {{end}}
