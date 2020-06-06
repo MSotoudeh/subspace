@@ -1,0 +1,69 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "dmacvicar",
+      "name": "Duncan Mac-Vicar P.",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/15332?v=4",
+      "profile": "https://duncan.codes",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "valentin2105",
+      "name": "Valentin Ouvrard",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/12403145?v=4",
+      "profile": "https://opsnotice.xyz",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "agonbar",
+      "name": "Adrián González Barbosa",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/1553211?v=4",
+      "profile": "https://github.com/agonbar",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "gavinelder",
+      "name": "Gavin",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/1226100?v=4",
+      "profile": "http://www.improbable.io",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "squat",
+      "name": "Lucas Servén Marín",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/20484159?v=4",
+      "profile": "https://squat.ai",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jack1902",
+      "name": "Jack",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/39212456?v=4",
+      "profile": "https://github.com/jack1902",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "subspace",
+  "projectOwner": "subspacecommunity",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
