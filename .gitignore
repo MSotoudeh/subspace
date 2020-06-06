@@ -1,3 +1,4 @@
 subspace-linux-amd64
 bindata.go
 docker-compose.yml
+run.sh

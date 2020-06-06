@@ -414,11 +414,3 @@ func configureSAML() error {
 	logger.Infof("successfully configured SAML")
 	return nil
 }
-
-func BestDomain() string {
-	domain := config.FindInfo().Domain
-	if domain != "" {
-		return domain
-	}
-	return httpHost
-}
