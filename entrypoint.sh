@@ -118,9 +118,11 @@ if ! test -d /data/wireguard; then
   cd /data/wireguard
 
   mkdir clients
-  touch clients/null.conf # So you can cat *.conf safely
+  mkdir clients/null
+  touch clients/null/null.conf # So you can cat *.conf safely
   mkdir peers
-  touch peers/null.conf # So you can cat *.conf safely
+  mkdir peers/null
+  touch peers/null/null.conf # So you can cat *.conf safely
   mkdir server
   mkdir config
 
